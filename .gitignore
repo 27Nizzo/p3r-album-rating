@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+
+# Ficheiros de ambiente (Segredos)
+.env
+.env*.local
+.env.local
+
+# Dependências e Builds
+node_modules/
+.next/
+dist/
+
+# Base de dados local
+prisma/dev.db
+prisma/dev.db-journal
