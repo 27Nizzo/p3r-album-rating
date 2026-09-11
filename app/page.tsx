@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Disc, Star, Flame, Music, Sparkles, Search, Send, CheckCircle2, MessageSquare, Loader2, Play, Pause, ListMusic, LogIn, LogOut } from 'lucide-react';
 import { useSession, signIn, signOut } from 'next-auth/react';
+import AuthModal from '@/components/AuthModal';
 
 interface Album {
   id: string;
@@ -61,6 +62,9 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'rate' | 'community' | 'tracks'>('rate');
   const [successMessage, setSuccessMessage] = useState(false);
+  
+  // CORRIGIDO: Nome do estado
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   const fetchReviews = async () => {
     try {
@@ -243,7 +247,9 @@ export default function Home() {
                 {session.user?.image && (
                   <img src={session.user.image} alt="User" className="w-6 h-6 rounded-full border border-persona-cyan" />
                 )}
-                <span className="text-xs font-mono text-persona-cyan uppercase font-bold truncate max-w-[100px]">{session.user?.name}</span>
+                <span className="text-xs font-mono text-persona-cyan uppercase font-bold truncate max-w-[100px]">
+                  {session.user?.name || session.user?.email}
+                </span>
                 <button onClick={() => signOut()} title="Sair" className="text-red-400 hover:text-red-300 ml-1">
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -251,11 +257,12 @@ export default function Home() {
             </div>
           ) : (
             <button
-              onClick={() => signIn('github')}
-              className="bg-persona-cyan text-persona-dark font-black px-4 py-1.5 -skew-x-12 border border-persona-cyan hover:bg-white transition-all flex items-center gap-2 text-xs uppercase italic"
+              type="button"
+              onClick={() => setIsAuthModalOpen(true)}
+              className="bg-persona-cyan text-persona-dark font-black px-4 py-1.5 -skew-x-12 border border-persona-cyan hover:bg-white transition-all flex items-center gap-2 text-xs uppercase italic cursor-pointer"
             >
               <LogIn className="w-4 h-4 skew-x-12" />
-              <span className="skew-x-12">Login / Sign Up</span>
+              <span className="skew-x-12">LOGIN / SIGN UP</span>
             </button>
           )}
         </div>
@@ -373,79 +380,76 @@ export default function Home() {
             </motion.div>
           )}
 
-{/* TAB 3: Faixas do Álbum */}
-{activeTab === 'tracks' && (
-  <motion.div 
-    initial={{ opacity: 0, y: 20 }} 
-    animate={{ opacity: 1, y: 0 }} 
-    className="bg-persona-glass backdrop-blur-md border-2 border-persona-cyan/40 p-4 max-h-[420px] overflow-y-auto pr-3 space-y-3 scrollbar-thin scrollbar-thumb-persona-cyan scrollbar-track-persona-dark"
-  >
-    {isLoadingTracks ? (
-      <div className="text-center py-8">
-        <Loader2 className="w-8 h-8 text-persona-cyan animate-spin mx-auto mb-2" />
-        <p className="font-mono text-xs text-persona-cyan/70">A CARREGAR FAIXAS DO SPOTIFY...</p>
-      </div>
-    ) : tracks.length === 0 ? (
-      <p className="font-mono text-xs text-persona-cyan/60 text-center py-8">
-        PESQUISA E SELECIONA UM ÁLBUM NO SPOTIFY PARA VER AS MÚSICAS.
-      </p>
-    ) : (
-      // Agrupa as faixas por discNumber
-      Object.entries(
-        tracks.reduce((acc, track) => {
-          const disc = track.discNumber || 1;
-          if (!acc[disc]) acc[disc] = [];
-          acc[disc].push(track);
-          return acc;
-        }, {} as Record<number, Track[]>)
-      ).map(([discNumber, discTracks]) => (
-        <div key={`disc-${discNumber}`} className="space-y-2">
-          {/* Separador do Disco P3R */}
-          <div className="flex items-center gap-2 py-1 border-b-2 border-persona-cyan/60 -skew-x-6 bg-persona-blue/40 px-3 my-2">
-            <Disc className="w-4 h-4 text-persona-cyan skew-x-6" />
-            <span className="font-black italic text-xs uppercase text-persona-cyan tracking-wider skew-x-6">
-              DISC {discNumber}
-            </span>
-          </div>
-
-          {/* Lista de Faixas deste Disco */}
-          {discTracks.map((track) => (
-            <div 
-              key={track.id} 
-              className="flex items-center justify-between p-2.5 border-b border-persona-cyan/20 hover:bg-persona-blue/30 transition-colors group -skew-x-6"
+          {/* TAB 3: Faixas do Álbum */}
+          {activeTab === 'tracks' && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              className="bg-persona-glass backdrop-blur-md border-2 border-persona-cyan/40 p-4 max-h-[420px] overflow-y-auto pr-3 space-y-3 scrollbar-thin scrollbar-thumb-persona-cyan scrollbar-track-persona-dark"
             >
-              <div className="flex items-center gap-3 skew-x-6 min-w-0 pr-2">
-                <span className="font-mono text-xs text-persona-cyan shrink-0">
-                  {track.trackNumber < 10 ? `0${track.trackNumber}` : track.trackNumber}
-                </span>
-                <span className="font-bold text-xs uppercase italic group-hover:text-persona-cyan transition-colors truncate">
-                  {track.name}
-                </span>
-              </div>
-              <div className="flex items-center gap-4 skew-x-6 shrink-0">
-                <span className="font-mono text-[10px] text-persona-white/60">
-                  {formatDuration(track.durationMs)}
-                </span>
-                {track.previewUrl ? (
-                  <button 
-                    onClick={() => handlePlayPreview(track)} 
-                    className="p-1.5 bg-persona-blue text-persona-cyan border border-persona-cyan hover:bg-persona-cyan hover:text-persona-dark transition-all"
-                  >
-                    {playingTrackId === track.id ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                  </button>
-                ) : (
-                  <span className="text-[9px] font-mono text-persona-white/30 uppercase">
-                    No Preview
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ))
-    )}
-  </motion.div>
-)}
+              {isLoadingTracks ? (
+                <div className="text-center py-8">
+                  <Loader2 className="w-8 h-8 text-persona-cyan animate-spin mx-auto mb-2" />
+                  <p className="font-mono text-xs text-persona-cyan/70">A CARREGAR FAIXAS DO SPOTIFY...</p>
+                </div>
+              ) : tracks.length === 0 ? (
+                <p className="font-mono text-xs text-persona-cyan/60 text-center py-8">
+                  PESQUISA E SELECIONA UM ÁLBUM NO SPOTIFY PARA VER AS MÚSICAS.
+                </p>
+              ) : (
+                Object.entries(
+                  tracks.reduce((acc, track) => {
+                    const disc = track.discNumber || 1;
+                    if (!acc[disc]) acc[disc] = [];
+                    acc[disc].push(track);
+                    return acc;
+                  }, {} as Record<number, Track[]>)
+                ).map(([discNumber, discTracks]) => (
+                  <div key={`disc-${discNumber}`} className="space-y-2">
+                    <div className="flex items-center gap-2 py-1 border-b-2 border-persona-cyan/60 -skew-x-6 bg-persona-blue/40 px-3 my-2">
+                      <Disc className="w-4 h-4 text-persona-cyan skew-x-6" />
+                      <span className="font-black italic text-xs uppercase text-persona-cyan tracking-wider skew-x-6">
+                        DISC {discNumber}
+                      </span>
+                    </div>
+
+                    {discTracks.map((track) => (
+                      <div 
+                        key={track.id} 
+                        className="flex items-center justify-between p-2.5 border-b border-persona-cyan/20 hover:bg-persona-blue/30 transition-colors group -skew-x-6"
+                      >
+                        <div className="flex items-center gap-3 skew-x-6 min-w-0 pr-2">
+                          <span className="font-mono text-xs text-persona-cyan shrink-0">
+                            {track.trackNumber < 10 ? `0${track.trackNumber}` : track.trackNumber}
+                          </span>
+                          <span className="font-bold text-xs uppercase italic group-hover:text-persona-cyan transition-colors truncate">
+                            {track.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 skew-x-6 shrink-0">
+                          <span className="font-mono text-[10px] text-persona-white/60">
+                            {formatDuration(track.durationMs)}
+                          </span>
+                          {track.previewUrl ? (
+                            <button 
+                              onClick={() => handlePlayPreview(track)} 
+                              className="p-1.5 bg-persona-blue text-persona-cyan border border-persona-cyan hover:bg-persona-cyan hover:text-persona-dark transition-all cursor-pointer"
+                            >
+                              {playingTrackId === track.id ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                            </button>
+                          ) : (
+                            <span className="text-[9px] font-mono text-persona-white/30 uppercase">
+                              No Preview
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
+            </motion.div>
+          )}
         </div>
       </div>
 
@@ -453,6 +457,9 @@ export default function Home() {
         <span>PERSONA 3 RELOAD INSPIRED UI</span>
         <span>TRACKLIST & AUTHENTICATION ACTIVE</span>
       </footer>
+
+      {/* CORRIGIDO: Inclusão do AuthModal */}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </main>
   );
 }
