@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Disc, Star, Flame, Music, Sparkles, Search, Send, CheckCircle2, MessageSquare, Loader2, Play, Pause, ListMusic, LogIn, LogOut } from 'lucide-react';
-import { useSession, signIn, signOut } from 'next-auth/react';
+import { Disc, Star, Flame, Music, Sparkles, Search, Send, CheckCircle2, MessageSquare, Loader2, Play, Pause, ListMusic, LogIn, LogOut, User } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import Link from 'next/link';
 import AuthModal from '@/components/AuthModal';
+import AudioPlayer from '@/components/AudioPlayer';
 
 interface Album {
   id: string;
@@ -37,6 +39,18 @@ interface Review {
 export default function Home() {
   const { data: session } = useSession();
 
+  // 1. Estados do Leitor de Áudio Neon (no topo para evitar erros de escopo)
+  const [currentTrack, setCurrentTrack] = useState<{
+    id: string;
+    name: string;
+    artist: string;
+    coverUrl: string;
+    previewUrl: string | null;
+  } | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // 2. Outros Estados da Aplicação
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Album[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -51,8 +65,6 @@ export default function Home() {
 
   const [tracks, setTracks] = useState<Track[]>([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState(false);
-  const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -62,9 +74,55 @@ export default function Home() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<'rate' | 'community' | 'tracks'>('rate');
   const [successMessage, setSuccessMessage] = useState(false);
-  
-  // CORRIGIDO: Nome do estado
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Estatísticas do Álbum
+  const [albumStats, setAlbumStats] = useState<{ averageRating: number; totalReviews: number }>({
+    averageRating: 0,
+    totalReviews: 0,
+  });
+
+  // Lógica de Reprodução de Áudio
+  const handlePlayPreview = (track: Track) => {
+    if (!track.previewUrl) return;
+
+    if (currentTrack?.id === track.id) {
+      if (isPlaying) {
+        audioRef.current?.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current?.play();
+        setIsPlaying(true);
+      }
+    } else {
+      if (audioRef.current) audioRef.current.pause();
+
+      audioRef.current = new Audio(track.previewUrl);
+      setCurrentTrack({
+        id: track.id,
+        name: track.name,
+        artist: selectedAlbum.artist,
+        coverUrl: selectedAlbum.coverUrl,
+        previewUrl: track.previewUrl,
+      });
+
+      audioRef.current.play();
+      setIsPlaying(true);
+
+      audioRef.current.onended = () => {
+        setIsPlaying(false);
+      };
+    }
+  };
+
+  const handleStopAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setCurrentTrack(null);
+    setIsPlaying(false);
+  };
 
   const fetchReviews = async () => {
     try {
@@ -79,14 +137,32 @@ export default function Home() {
     }
   };
 
+  const fetchAlbumStats = async () => {
+    if (!selectedAlbum.id || selectedAlbum.id === 'default') {
+      setAlbumStats({ averageRating: 0, totalReviews: 0 });
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/reviews/album/${selectedAlbum.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAlbumStats(data);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar média do álbum:', err);
+    }
+  };
+
   useEffect(() => {
     fetchReviews();
   }, []);
 
-  // Obter Músicas do Álbum Selecionado
+  // Obter Músicas e Estatísticas do Álbum Selecionado
   useEffect(() => {
     if (!selectedAlbum.id || selectedAlbum.id === 'default') {
       setTracks([]);
+      setAlbumStats({ averageRating: 0, totalReviews: 0 });
       return;
     }
 
@@ -106,6 +182,7 @@ export default function Home() {
     };
 
     fetchTracks();
+    fetchAlbumStats();
   }, [selectedAlbum]);
 
   // Debounce Pesquisa Spotify
@@ -130,22 +207,6 @@ export default function Home() {
 
     return () => clearTimeout(timer);
   }, [query]);
-
-  // Reproduzir/Pausar Preview de Áudio
-  const handlePlayPreview = (track: Track) => {
-    if (!track.previewUrl) return;
-
-    if (playingTrackId === track.id) {
-      audioRef.current?.pause();
-      setPlayingTrackId(null);
-    } else {
-      if (audioRef.current) audioRef.current.pause();
-      audioRef.current = new Audio(track.previewUrl);
-      audioRef.current.play();
-      setPlayingTrackId(track.id);
-      audioRef.current.onended = () => setPlayingTrackId(null);
-    }
-  };
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,6 +234,7 @@ export default function Home() {
         setSuccessMessage(true);
         setTimeout(() => setSuccessMessage(false), 3000);
         fetchReviews();
+        fetchAlbumStats();
       }
     } catch (err) {
       console.error('Erro ao guardar:', err);
@@ -188,11 +250,11 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-persona-dark text-persona-white relative overflow-hidden flex flex-col justify-between p-6 md:p-12">
+    <main className="min-h-screen bg-persona-dark text-persona-white relative overflow-hidden flex flex-col justify-between p-6 md:p-12 pb-28">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-persona-blue/20 blur-[140px] -z-10 rounded-full" />
       <div className="absolute -bottom-20 -left-20 w-[600px] h-[600px] bg-persona-cyan/10 blur-[160px] -z-10 rounded-full" />
 
-      {/* Cabeçalho com Login Integrado */}
+      {/* Cabeçalho */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b-2 border-persona-cyan/30 pb-4">
         <motion.div initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex items-center gap-3">
           <div className="bg-persona-cyan text-persona-dark px-3 py-1 font-black text-xl italic -skew-x-12">P3R</div>
@@ -240,20 +302,28 @@ export default function Home() {
             </AnimatePresence>
           </div>
 
-          {/* Área de Autenticação */}
+          {/* Área de Autenticação - Direciona para /profile */}
           {session ? (
             <div className="flex items-center gap-3 bg-persona-blue/20 border border-persona-cyan/40 px-3 py-1.5 -skew-x-12">
-              <div className="skew-x-12 flex items-center gap-2">
-                {session.user?.image && (
-                  <img src={session.user.image} alt="User" className="w-6 h-6 rounded-full border border-persona-cyan" />
-                )}
+              <Link
+                href="/profile"
+                className="skew-x-12 flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+                title="Ir para o meu perfil"
+              >
+                <div className="w-6 h-6 rounded-full border border-persona-cyan flex items-center justify-center overflow-hidden shrink-0 bg-persona-blue/40">
+                  {session.user?.image ? (
+                    <img src={session.user.image} alt="User" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-3.5 h-3.5 text-persona-cyan" />
+                  )}
+                </div>
                 <span className="text-xs font-mono text-persona-cyan uppercase font-bold truncate max-w-[100px]">
                   {session.user?.name || session.user?.email}
                 </span>
-                <button onClick={() => signOut()} title="Sair" className="text-red-400 hover:text-red-300 ml-1">
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
+              </Link>
+              <button onClick={() => signOut()} title="Sair" className="text-red-400 hover:text-red-300 ml-1 skew-x-12 cursor-pointer">
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           ) : (
             <button
@@ -285,8 +355,21 @@ export default function Home() {
               </div>
               <h2 className="text-3xl font-black uppercase italic tracking-tight text-persona-white leading-tight">{selectedAlbum.title}</h2>
               <p className="text-persona-cyan font-bold tracking-widest uppercase text-base mb-2">{selectedAlbum.artist}</p>
-              <div className="flex items-center gap-2 mt-4 text-xs font-mono text-persona-white/70 border-t border-persona-cyan/20 pt-3">
-                <Music className="w-4 h-4 text-persona-cyan" /> RELEASE YEAR: {selectedAlbum.releaseYear}
+              
+              <div className="flex items-center justify-between mt-4 text-xs font-mono text-persona-white/70 border-t border-persona-cyan/20 pt-3">
+                <div className="flex items-center gap-2">
+                  <Music className="w-4 h-4 text-persona-cyan" /> RELEASE YEAR: {selectedAlbum.releaseYear}
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-2.5 py-1 -skew-x-12">
+                  <Star className="w-3.5 h-3.5 text-persona-cyan fill-persona-cyan skew-x-12" />
+                  <span className="font-mono text-xs font-bold text-persona-cyan skew-x-12">
+                    {albumStats.totalReviews > 0 ? `${albumStats.averageRating} / 5.0` : 'N/A'}
+                  </span>
+                  <span className="text-[9px] font-mono text-persona-white/50 skew-x-12">
+                    ({albumStats.totalReviews})
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -311,39 +394,66 @@ export default function Home() {
             </button>
           </div>
 
-          {/* TAB 1: Form de Rating */}
+{/* TAB 1: Form de Rating */}
           {activeTab === 'rate' && (
-            <motion.form initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} onSubmit={handleSubmitReview} className="bg-persona-glass backdrop-blur-md border-2 border-persona-cyan/40 p-6 -skew-x-6 space-y-5">
-              <div className="skew-x-6 space-y-4">
-                <div>
-                  <label className="block text-xs font-mono text-persona-cyan uppercase tracking-widest mb-2">AVALIAÇÃO DE 1 A 5 ESTRELAS</label>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button key={star} type="button" onClick={() => setRating(star)} onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)} className="p-1 transition-transform hover:scale-125 focus:outline-none">
-                        <Star className={`w-8 h-8 ${star <= (hoverRating || rating) ? 'text-persona-cyan fill-persona-cyan drop-shadow-[0_0_8px_rgba(0,229,255,0.8)]' : 'text-persona-blue/40'}`} />
-                      </button>
-                    ))}
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+              {!session ? (
+                <div className="bg-persona-dark/90 border-2 border-persona-cyan/40 p-8 text-center -skew-x-6 space-y-4">
+                  <div className="skew-x-6 space-y-3">
+                    <p className="font-mono text-xs text-persona-cyan uppercase tracking-widest">
+                      ACESSO RESTRITO A OPERATIVOS
+                    </p>
+                    <p className="font-mono text-xs text-persona-white/70">
+                      Precisas de iniciar sessão com a tua conta para enviares avaliações e guardar as tuas críticas no teu perfil.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsAuthModalOpen(true)}
+                      className="bg-persona-cyan text-persona-dark font-black px-6 py-2 -skew-x-12 border border-persona-cyan hover:bg-white transition-all inline-flex items-center gap-2 text-xs uppercase italic cursor-pointer mt-2"
+                    >
+                      <LogIn className="w-4 h-4 skew-x-12" />
+                      <span className="skew-x-12">FAZER LOGIN AGORA</span>
+                    </button>
                   </div>
                 </div>
+              ) : (
+                <form onSubmit={handleSubmitReview} className="bg-persona-glass backdrop-blur-md border-2 border-persona-cyan/40 p-6 -skew-x-6 space-y-5">
+                  <div className="skew-x-6 space-y-4">
+                    <div>
+                      <label className="block text-xs font-mono text-persona-cyan uppercase tracking-widest mb-2">
+                        AVALIAÇÃO DE 1 A 5 ESTRELAS
+                      </label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button key={star} type="button" onClick={() => setRating(star)} onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)} className="p-1 transition-transform hover:scale-125 focus:outline-none">
+                            <Star className={`w-8 h-8 ${star <= (hoverRating || rating) ? 'text-persona-cyan fill-persona-cyan drop-shadow-[0_0_8px_rgba(0,229,255,0.8)]' : 'text-persona-blue/40'}`} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-mono text-persona-cyan uppercase tracking-widest mb-2">A TUA CRÍTICA / ANÁLISE</label>
-                  <textarea rows={4} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="ESCREVE AQUI AS TUAS IMPRESSÕES SOBRE O ÁLBUM..." className="w-full bg-persona-dark/90 border border-persona-cyan/50 p-3 text-persona-white font-mono text-xs focus:border-persona-cyan focus:outline-none focus:ring-1 focus:ring-persona-cyan placeholder-persona-cyan/30" />
-                </div>
+                    <div>
+                      <label className="block text-xs font-mono text-persona-cyan uppercase tracking-widest mb-2">
+                        A TUA CRÍTICA / ANÁLISE
+                      </label>
+                      <textarea rows={4} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="ESCREVE AQUI AS TUAS IMPRESSÕES SOBRE O ÁLBUM..." className="w-full bg-persona-dark/90 border border-persona-cyan/50 p-3 text-persona-white font-mono text-xs focus:border-persona-cyan focus:outline-none focus:ring-1 focus:ring-persona-cyan placeholder-persona-cyan/30" />
+                    </div>
 
-                <div className="flex justify-between items-center pt-2">
-                  {successMessage && (
-                    <span className="text-xs font-mono text-persona-cyan flex items-center gap-1 animate-bounce">
-                      <CheckCircle2 className="w-4 h-4" /> CRÍTICA GUARDADA NA BD!
-                    </span>
-                  )}
-                  <button type="submit" disabled={rating === 0 || !comment.trim() || isSubmitting} className="ml-auto bg-persona-blue border border-persona-cyan text-persona-white hover:bg-persona-cyan hover:text-persona-dark px-6 py-2.5 -skew-x-12 font-black italic uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 group">
-                    <span className="skew-x-12">{isSubmitting ? 'A GUARDAR...' : 'SUBMETER'}</span>
-                    <Send className="w-4 h-4 skew-x-12 group-hover:translate-x-1 transition-transform" />
-                  </button>
-                </div>
-              </div>
-            </motion.form>
+                    <div className="flex justify-between items-center pt-2">
+                      {successMessage && (
+                        <span className="text-xs font-mono text-persona-cyan flex items-center gap-1 animate-bounce">
+                          <CheckCircle2 className="w-4 h-4" /> CRÍTICA GUARDADA NA BD!
+                        </span>
+                      )}
+                      <button type="submit" disabled={rating === 0 || !comment.trim() || isSubmitting} className="ml-auto bg-persona-blue border border-persona-cyan text-persona-white hover:bg-persona-cyan hover:text-persona-dark px-6 py-2.5 -skew-x-12 font-black italic uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 group">
+                        <span className="skew-x-12">{isSubmitting ? 'A GUARDAR...' : 'SUBMETER'}</span>
+                        <Send className="w-4 h-4 skew-x-12 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              )}
+            </motion.div>
           )}
 
           {/* TAB 2: Comunidade */}
@@ -435,7 +545,11 @@ export default function Home() {
                               onClick={() => handlePlayPreview(track)} 
                               className="p-1.5 bg-persona-blue text-persona-cyan border border-persona-cyan hover:bg-persona-cyan hover:text-persona-dark transition-all cursor-pointer"
                             >
-                              {playingTrackId === track.id ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                              {currentTrack?.id === track.id && isPlaying ? (
+                                <Pause className="w-3.5 h-3.5" />
+                              ) : (
+                                <Play className="w-3.5 h-3.5" />
+                              )}
                             </button>
                           ) : (
                             <span className="text-[9px] font-mono text-persona-white/30 uppercase">
@@ -458,7 +572,23 @@ export default function Home() {
         <span>TRACKLIST & AUTHENTICATION ACTIVE</span>
       </footer>
 
-      {/* CORRIGIDO: Inclusão do AuthModal */}
+      {/* Leitor de Áudio Neon Fixo */}
+      <AudioPlayer
+        currentTrack={currentTrack}
+        isPlaying={isPlaying}
+        onTogglePlay={() => {
+          if (isPlaying) {
+            audioRef.current?.pause();
+            setIsPlaying(false);
+          } else {
+            audioRef.current?.play();
+            setIsPlaying(true);
+          }
+        }}
+        onClose={handleStopAudio}
+      />
+
+      {/* Modal de Autenticação */}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </main>
   );

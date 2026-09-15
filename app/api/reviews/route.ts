@@ -1,40 +1,46 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-
-export async function GET() {
-  try {
-    const reviews = await prisma.review.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-    return NextResponse.json({ reviews });
-  } catch (error) {
-    return NextResponse.json({ error: 'Erro ao procurar críticas' }, { status: 500 });
-  }
-}
+import { auth } from '@/lib/authOptions';
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Precisas de ter a sessão iniciada para avaliar um álbum.' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { albumId, albumTitle, artistName, coverUrl, releaseYear, rating, comment } = body;
 
-    if (!albumTitle || !rating || !comment) {
-      return NextResponse.json({ error: 'Dados incompletos' }, { status: 400 });
+    if (!albumId || !rating || !comment) {
+      return NextResponse.json({ error: 'Dados incompletos.' }, { status: 400 });
     }
 
-    const review = await prisma.review.create({
+    // Cria a review conectando diretamente ao Utilizador na BD pelo Email
+    const newReview = await prisma.review.create({
       data: {
-        albumId: albumId || 'custom',
+        albumId,
         albumTitle,
         artistName,
-        coverUrl: coverUrl || '',
-        releaseYear: releaseYear || 'N/A',
+        coverUrl,
+        releaseYear,
         rating: Number(rating),
         comment,
+        user: {
+          connect: {
+            email: session.user.email,
+          },
+        },
       },
     });
 
-    return NextResponse.json({ review }, { status: 201 });
+    return NextResponse.json({ review: newReview }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'Erro ao guardar crítica' }, { status: 500 });
+    console.error('❌ Erro ao criar crítica:', error);
+    return NextResponse.json({ error: 'Erro interno ao submeter crítica.' }, { status: 500 });
   }
 }
