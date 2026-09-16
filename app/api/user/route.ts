@@ -10,6 +10,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
+    // Busca as reviews associadas ao utilizador pelo email da sessão
     const reviews = await prisma.review.findMany({
       where: {
         user: {
@@ -40,6 +41,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'ID da crítica ausente' }, { status: 400 });
     }
 
+    // Apaga garantindo que a review pertence ao utilizador autenticado
     await prisma.review.deleteMany({
       where: {
         id,

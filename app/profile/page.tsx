@@ -16,7 +16,6 @@ import {
   Edit3,
   Check,
   X,
-  Camera,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -54,7 +53,13 @@ export default function ProfilePage() {
     try {
       setLoading(true);
       const res = await fetch('/api/reviews/user');
-      const data = await res.json();
+
+      if (!res.ok) throw new Error(`Erro HTTP: ${res.status}`);
+
+      const text = await res.text();
+      if (!text) return; // Impede o erro se a resposta vier vazia
+
+      const data = JSON.parse(text);
       if (data.reviews) setUserReviews(data.reviews);
     } catch (err) {
       console.error('Erro ao carregar críticas do perfil:', err);
@@ -98,6 +103,7 @@ export default function ProfilePage() {
 
     try {
       setIsSavingProfile(true);
+
       const res = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -105,9 +111,12 @@ export default function ProfilePage() {
       });
 
       if (res.ok) {
-        // Atualiza a sessão ativa do NextAuth
         await update({ name: newName, image: newImage });
+        router.refresh();
         setIsEditing(false);
+      } else {
+        const errorData = await res.json();
+        console.error('Erro retornado pela API:', errorData);
       }
     } catch (err) {
       console.error('Erro ao guardar perfil:', err);
@@ -133,7 +142,7 @@ export default function ProfilePage() {
     .filter((rev) => (filterRating === 'all' ? true : rev.rating === filterRating))
     .sort((a, b) => {
       if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       if (sortBy === 'highest') return b.rating - a.rating;
       if (sortBy === 'lowest') return a.rating - b.rating;
       return 0;
