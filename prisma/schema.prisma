@@ -17,6 +17,22 @@ model User {
   accounts      Account[]
   sessions      Session[]
   reviews       Review[]
+  favorites     Favorite[]
+}
+
+model Favorite {
+  id            String @id @default(cuid())
+  albumId       String
+  albumTitle    String
+  artistName    String
+  coverUrl      String
+  releaseYear   String
+  createdAt     DateTime @default(now())
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, albumId])
 }
 
 model Account {

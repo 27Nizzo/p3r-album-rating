@@ -2,11 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Disc, Star, Flame, Music, Sparkles, Search, Send, CheckCircle2, MessageSquare, Loader2, Play, Pause, ListMusic, LogIn, LogOut, User } from 'lucide-react';
+import { Disc, Star, Flame, Music, Sparkles, Search, Send, CheckCircle2, MessageSquare, Loader2, Play, Pause, ListMusic, LogIn, LogOut, User, Bookmark, BookmarkCheck } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import AuthModal from '@/components/AuthModal';
 import AudioPlayer from '@/components/AudioPlayer';
+import SfxToggle from '@/components/SfxToggle';
+import { sfx } from '@/lib/sfx';
+
 
 interface Album {
   id: string;
@@ -39,7 +42,7 @@ interface Review {
 export default function Home() {
   const { data: session } = useSession();
 
-  // 1. Estados do Leitor de Áudio Neon (no topo para evitar erros de escopo)
+  // 1. Estados do Leitor de Áudio Neon
   const [currentTrack, setCurrentTrack] = useState<{
     id: string;
     name: string;
@@ -77,6 +80,72 @@ export default function Home() {
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  // Estados do Compendium
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+
+  // Verificar se o álbum está no Compendium
+  const checkIsFavorite = async () => {
+    if (!session || !selectedAlbum.id || selectedAlbum.id === 'default') {
+      setIsFavorite(false);
+      return;
+    }
+    try {
+      const res = await fetch('/api/favorites');
+      if (!res.ok) return;
+      const text = await res.text();
+      if (!text || text.trim().startsWith('<')) return;
+
+      const data = JSON.parse(text);
+      if (data.favorites) {
+        const found = data.favorites.some((fav: any) => fav.albumId === selectedAlbum.id);
+        setIsFavorite(found);
+      }
+    } catch (err) {
+      console.error('Erro ao verificar compendium:', err);
+    }
+  };
+
+  // Adicionar / Remover do Compendium
+  const toggleFavorite = async () => {
+    if (!session) {
+      sfx.playClick();
+      setIsAuthModalOpen(true);
+      return;
+    }
+    if (!selectedAlbum.id || selectedAlbum.id === 'default' || isTogglingFavorite) return;
+
+    sfx.playClick();
+    setIsTogglingFavorite(true);
+
+    try {
+      if (isFavorite) {
+        const res = await fetch(`/api/favorites?albumId=${selectedAlbum.id}`, { method: 'DELETE' });
+        if (res.ok) setIsFavorite(false);
+      } else {
+        const res = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            albumId: selectedAlbum.id,
+            albumTitle: selectedAlbum.title,
+            artistName: selectedAlbum.artist,
+            coverUrl: selectedAlbum.coverUrl,
+            releaseYear: selectedAlbum.releaseYear,
+          }),
+        });
+        if (res.ok) {
+          sfx.playSuccess();
+          setIsFavorite(true);
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao alterar compendium:', err);
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  };
+
   // Estatísticas do Álbum
   const [albumStats, setAlbumStats] = useState<{ averageRating: number; totalReviews: number }>({
     averageRating: 0,
@@ -85,6 +154,7 @@ export default function Home() {
 
   // Lógica de Reprodução de Áudio
   const handlePlayPreview = (track: Track) => {
+    sfx.playClick();
     if (!track.previewUrl) return;
 
     if (currentTrack?.id === track.id) {
@@ -117,6 +187,7 @@ export default function Home() {
   };
 
   const handleStopAudio = () => {
+    sfx.playClick();
     if (audioRef.current) {
       audioRef.current.pause();
     }
@@ -128,10 +199,24 @@ export default function Home() {
     try {
       setIsLoadingReviews(true);
       const res = await fetch('/api/reviews');
-      const data = await res.json();
+
+      if (!res.ok) {
+        console.warn(`[Reviews] A API respondeu com status: ${res.status}`);
+        return;
+      }
+
+      const text = await res.text();
+      if (!text || text.trim().length === 0) return;
+
+      if (text.trim().startsWith('<')) {
+        console.error('[Reviews] Resposta inesperada (HTML em vez de JSON)');
+        return;
+      }
+
+      const data = JSON.parse(text);
       if (data.reviews) setReviews(data.reviews);
     } catch (err) {
-      console.error('Erro ao carregar críticas:', err);
+      console.error('Erro ao carregar críticas da comunidade:', err);
     } finally {
       setIsLoadingReviews(false);
     }
@@ -145,15 +230,29 @@ export default function Home() {
 
     try {
       const res = await fetch(`/api/reviews/album/${selectedAlbum.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAlbumStats(data);
+
+      if (!res.ok) {
+        setAlbumStats({ averageRating: 0, totalReviews: 0 });
+        return;
       }
+
+      const text = await res.text();
+      if (!text || text.trim().length === 0) return;
+
+      if (text.trim().startsWith('<')) {
+        console.error('[AlbumStats] Resposta inesperada (HTML em vez de JSON)');
+        return;
+      }
+
+      const data = JSON.parse(text);
+      setAlbumStats(data);
     } catch (err) {
       console.error('Erro ao carregar média do álbum:', err);
+      setAlbumStats({ averageRating: 0, totalReviews: 0 });
     }
   };
 
+  // Carregar críticas ao iniciar
   useEffect(() => {
     fetchReviews();
   }, []);
@@ -183,7 +282,8 @@ export default function Home() {
 
     fetchTracks();
     fetchAlbumStats();
-  }, [selectedAlbum]);
+    checkIsFavorite();
+  }, [selectedAlbum, session]);
 
   // Debounce Pesquisa Spotify
   useEffect(() => {
@@ -212,6 +312,7 @@ export default function Home() {
     e.preventDefault();
     if (rating === 0 || !comment.trim() || isSubmitting) return;
 
+    sfx.playClick();
     setIsSubmitting(true);
     try {
       const res = await fetch('/api/reviews', {
@@ -229,6 +330,7 @@ export default function Home() {
       });
 
       if (res.ok) {
+        sfx.playSuccess();
         setComment('');
         setRating(0);
         setSuccessMessage(true);
@@ -285,7 +387,17 @@ export default function Home() {
               {searchResults.length > 0 && (
                 <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute z-50 left-0 right-0 mt-2 bg-persona-dark border-2 border-persona-cyan shadow-[0_10px_30px_rgba(0,0,0,0.8)] max-h-80 overflow-y-auto">
                   {searchResults.map((album) => (
-                    <div key={album.id} onClick={() => { setSelectedAlbum(album); setQuery(''); setSearchResults([]); }} className="flex items-center gap-3 p-2.5 border-b border-persona-cyan/20 hover:bg-persona-blue/40 cursor-pointer transition-colors group">
+                    <div 
+                      key={album.id} 
+                      onMouseEnter={() => sfx.playHover()}
+                      onClick={() => { 
+                        sfx.playClick();
+                        setSelectedAlbum(album); 
+                        setQuery(''); 
+                        setSearchResults([]); 
+                      }} 
+                      className="flex items-center gap-3 p-2.5 border-b border-persona-cyan/20 hover:bg-persona-blue/40 cursor-pointer transition-colors group"
+                    >
                       {album.coverUrl ? (
                         <img src={album.coverUrl} alt={album.title} className="w-10 h-10 object-cover border border-persona-cyan" />
                       ) : (
@@ -302,39 +414,51 @@ export default function Home() {
             </AnimatePresence>
           </div>
 
-          {/* Área de Autenticação - Direciona para /profile */}
-          {session ? (
-            <div className="flex items-center gap-3 bg-persona-blue/20 border border-persona-cyan/40 px-3 py-1.5 -skew-x-12">
-              <Link
-                href="/profile"
-                className="skew-x-12 flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
-                title="Ir para o meu perfil"
+          {/* Área de Autenticação + SFX Toggle */}
+          <div className="flex items-center gap-3">
+            <SfxToggle />
+
+            {session ? (
+              <div className="flex items-center gap-3 bg-persona-blue/20 border border-persona-cyan/40 px-3 py-1.5 -skew-x-12">
+                <Link
+                  href="/profile"
+                  onMouseEnter={() => sfx.playHover()}
+                  onClick={() => sfx.playClick()}
+                  className="skew-x-12 flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+                  title="Ir para o meu perfil"
+                >
+                  <div className="w-6 h-6 rounded-full border border-persona-cyan flex items-center justify-center overflow-hidden shrink-0 bg-persona-blue/40">
+                    {session.user?.image ? (
+                      <img src={session.user.image} alt="User" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-3.5 h-3.5 text-persona-cyan" />
+                    )}
+                  </div>
+                  <span className="text-xs font-mono text-persona-cyan uppercase font-bold truncate max-w-[100px]">
+                    {session.user?.name || session.user?.email}
+                  </span>
+                </Link>
+                <button 
+                  onClick={() => { sfx.playClick(); signOut(); }} 
+                  onMouseEnter={() => sfx.playHover()}
+                  title="Sair" 
+                  className="text-red-400 hover:text-red-300 ml-1 skew-x-12 cursor-pointer"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onMouseEnter={() => sfx.playHover()}
+                onClick={() => { sfx.playClick(); setIsAuthModalOpen(true); }}
+                className="bg-persona-cyan text-persona-dark font-black px-4 py-1.5 -skew-x-12 border border-persona-cyan hover:bg-white transition-all flex items-center gap-2 text-xs uppercase italic cursor-pointer"
               >
-                <div className="w-6 h-6 rounded-full border border-persona-cyan flex items-center justify-center overflow-hidden shrink-0 bg-persona-blue/40">
-                  {session.user?.image ? (
-                    <img src={session.user.image} alt="User" className="w-full h-full object-cover" />
-                  ) : (
-                    <User className="w-3.5 h-3.5 text-persona-cyan" />
-                  )}
-                </div>
-                <span className="text-xs font-mono text-persona-cyan uppercase font-bold truncate max-w-[100px]">
-                  {session.user?.name || session.user?.email}
-                </span>
-              </Link>
-              <button onClick={() => signOut()} title="Sair" className="text-red-400 hover:text-red-300 ml-1 skew-x-12 cursor-pointer">
-                <LogOut className="w-4 h-4" />
+                <LogIn className="w-4 h-4 skew-x-12" />
+                <span className="skew-x-12">LOGIN / SIGN UP</span>
               </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsAuthModalOpen(true)}
-              className="bg-persona-cyan text-persona-dark font-black px-4 py-1.5 -skew-x-12 border border-persona-cyan hover:bg-white transition-all flex items-center gap-2 text-xs uppercase italic cursor-pointer"
-            >
-              <LogIn className="w-4 h-4 skew-x-12" />
-              <span className="skew-x-12">LOGIN / SIGN UP</span>
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </header>
 
@@ -343,9 +467,36 @@ export default function Home() {
         <motion.div key={selectedAlbum.id} initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.3 }} className="lg:col-span-5 relative group">
           <div className="bg-persona-blue/30 border-2 border-persona-cyan p-6 -skew-x-6 shadow-[0_0_25px_rgba(0,229,255,0.25)]">
             <div className="skew-x-6">
-              <div className="inline-flex items-center gap-1 text-xs font-bold uppercase bg-persona-cyan text-persona-dark px-2.5 py-1 mb-4">
-                <Sparkles className="w-3.5 h-3.5" /> Spotlight Album
-              </div>
+              
+              
+              <div className="flex justify-between items-center mb-4">
+  <div className="inline-flex items-center gap-1 text-xs font-bold uppercase bg-persona-cyan text-persona-dark px-2.5 py-1">
+    <Sparkles className="w-3.5 h-3.5" /> Spotlight Album
+  </div>
+
+  {/* BOTÃO VELVET COMPENDIUM */}
+  {selectedAlbum.id !== 'default' && (
+    <button
+      onClick={toggleFavorite}
+      onMouseEnter={() => sfx.playHover()}
+      disabled={isTogglingFavorite}
+      title={isFavorite ? 'Remover do Velvet Compendium' : 'Registar no Velvet Compendium'}
+      className={`flex items-center gap-1.5 px-3 py-1 -skew-x-12 border font-mono text-xs font-bold uppercase transition-all cursor-pointer ${
+        isFavorite
+          ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_10px_rgba(0,229,255,0.6)]'
+          : 'bg-persona-dark/90 border-persona-cyan/50 text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark'
+      }`}
+    >
+      <div className="skew-x-12 flex items-center gap-1.5">
+        {isFavorite ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+        <span>{isFavorite ? 'IN COMPENDIUM' : '+ COMPENDIUM'}</span>
+      </div>
+    </button>
+  )}
+</div>
+
+
+
               <div className="relative aspect-square bg-gradient-to-br from-persona-blue to-persona-dark border-2 border-persona-cyan mb-4 overflow-hidden flex items-center justify-center group">
                 {selectedAlbum.coverUrl ? (
                   <img src={selectedAlbum.coverUrl} alt={selectedAlbum.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -378,23 +529,35 @@ export default function Home() {
         <div className="lg:col-span-7 flex flex-col space-y-4 justify-center">
           {/* Navegação de Tabs */}
           <div className="flex flex-wrap gap-3 mb-2">
-            <button onClick={() => setActiveTab('rate')} className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 ${activeTab === 'rate' ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]' : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'}`}>
+            <button 
+              onMouseEnter={() => sfx.playHover()}
+              onClick={() => { sfx.playClick(); setActiveTab('rate'); }} 
+              className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${activeTab === 'rate' ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]' : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'}`}
+            >
               <Flame className="w-4 h-4 skew-x-12" />
               <span className="skew-x-12">01 // EVALUATE</span>
             </button>
 
-            <button onClick={() => setActiveTab('community')} className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 ${activeTab === 'community' ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]' : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'}`}>
+            <button 
+              onMouseEnter={() => sfx.playHover()}
+              onClick={() => { sfx.playClick(); setActiveTab('community'); }} 
+              className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${activeTab === 'community' ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]' : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'}`}
+            >
               <MessageSquare className="w-4 h-4 skew-x-12" />
               <span className="skew-x-12">02 // COMMUNITY ({reviews.length})</span>
             </button>
 
-            <button onClick={() => setActiveTab('tracks')} className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 ${activeTab === 'tracks' ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]' : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'}`}>
+            <button 
+              onMouseEnter={() => sfx.playHover()}
+              onClick={() => { sfx.playClick(); setActiveTab('tracks'); }} 
+              className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${activeTab === 'tracks' ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]' : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'}`}
+            >
               <ListMusic className="w-4 h-4 skew-x-12" />
               <span className="skew-x-12">03 // TRACKS ({tracks.length})</span>
             </button>
           </div>
 
-{/* TAB 1: Form de Rating */}
+          {/* TAB 1: Form de Rating */}
           {activeTab === 'rate' && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               {!session ? (
@@ -408,7 +571,8 @@ export default function Home() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => setIsAuthModalOpen(true)}
+                      onMouseEnter={() => sfx.playHover()}
+                      onClick={() => { sfx.playClick(); setIsAuthModalOpen(true); }}
                       className="bg-persona-cyan text-persona-dark font-black px-6 py-2 -skew-x-12 border border-persona-cyan hover:bg-white transition-all inline-flex items-center gap-2 text-xs uppercase italic cursor-pointer mt-2"
                     >
                       <LogIn className="w-4 h-4 skew-x-12" />
@@ -425,7 +589,14 @@ export default function Home() {
                       </label>
                       <div className="flex gap-2">
                         {[1, 2, 3, 4, 5].map((star) => (
-                          <button key={star} type="button" onClick={() => setRating(star)} onMouseEnter={() => setHoverRating(star)} onMouseLeave={() => setHoverRating(0)} className="p-1 transition-transform hover:scale-125 focus:outline-none">
+                          <button 
+                            key={star} 
+                            type="button" 
+                            onMouseEnter={() => { sfx.playHover(); setHoverRating(star); }}
+                            onMouseLeave={() => setHoverRating(0)}
+                            onClick={() => { sfx.playClick(); setRating(star); }} 
+                            className="p-1 transition-transform hover:scale-125 focus:outline-none cursor-pointer"
+                          >
                             <Star className={`w-8 h-8 ${star <= (hoverRating || rating) ? 'text-persona-cyan fill-persona-cyan drop-shadow-[0_0_8px_rgba(0,229,255,0.8)]' : 'text-persona-blue/40'}`} />
                           </button>
                         ))}
@@ -445,7 +616,12 @@ export default function Home() {
                           <CheckCircle2 className="w-4 h-4" /> CRÍTICA GUARDADA NA BD!
                         </span>
                       )}
-                      <button type="submit" disabled={rating === 0 || !comment.trim() || isSubmitting} className="ml-auto bg-persona-blue border border-persona-cyan text-persona-white hover:bg-persona-cyan hover:text-persona-dark px-6 py-2.5 -skew-x-12 font-black italic uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 group">
+                      <button 
+                        type="submit" 
+                        onMouseEnter={() => sfx.playHover()}
+                        disabled={rating === 0 || !comment.trim() || isSubmitting} 
+                        className="ml-auto bg-persona-blue border border-persona-cyan text-persona-white hover:bg-persona-cyan hover:text-persona-dark px-6 py-2.5 -skew-x-12 font-black italic uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 group cursor-pointer"
+                      >
                         <span className="skew-x-12">{isSubmitting ? 'A GUARDAR...' : 'SUBMETER'}</span>
                         <Send className="w-4 h-4 skew-x-12 group-hover:translate-x-1 transition-transform" />
                       </button>
@@ -465,7 +641,7 @@ export default function Home() {
                 <div className="bg-persona-dark/60 border border-persona-cyan/30 p-8 text-center -skew-x-6"><p className="skew-x-6 font-mono text-xs text-persona-cyan/60">AINDA NÃO EXISTEM CRÍTICAS NA BASE DE DADOS. SEJA O PRIMEIRA A AVALIAR!</p></div>
               ) : (
                 reviews.map((rev) => (
-                  <div key={rev.id} className="bg-persona-dark border-l-4 border-persona-cyan p-4 -skew-x-6 shadow-md flex gap-4 items-center">
+                  <div key={rev.id} onMouseEnter={() => sfx.playHover()} className="bg-persona-dark border-l-4 border-persona-cyan p-4 -skew-x-6 shadow-md flex gap-4 items-center">
                     {rev.coverUrl && <img src={rev.coverUrl} alt={rev.albumTitle} className="w-14 h-14 object-cover border border-persona-cyan skew-x-6" />}
                     <div className="skew-x-6 space-y-1 w-full">
                       <div className="flex justify-between items-center border-b border-persona-cyan/20 pb-1">
@@ -526,6 +702,7 @@ export default function Home() {
                     {discTracks.map((track) => (
                       <div 
                         key={track.id} 
+                        onMouseEnter={() => sfx.playHover()}
                         className="flex items-center justify-between p-2.5 border-b border-persona-cyan/20 hover:bg-persona-blue/30 transition-colors group -skew-x-6"
                       >
                         <div className="flex items-center gap-3 skew-x-6 min-w-0 pr-2">
@@ -543,6 +720,7 @@ export default function Home() {
                           {track.previewUrl ? (
                             <button 
                               onClick={() => handlePlayPreview(track)} 
+                              onMouseEnter={() => sfx.playHover()}
                               className="p-1.5 bg-persona-blue text-persona-cyan border border-persona-cyan hover:bg-persona-cyan hover:text-persona-dark transition-all cursor-pointer"
                             >
                               {currentTrack?.id === track.id && isPlaying ? (
@@ -577,6 +755,7 @@ export default function Home() {
         currentTrack={currentTrack}
         isPlaying={isPlaying}
         onTogglePlay={() => {
+          sfx.playClick();
           if (isPlaying) {
             audioRef.current?.pause();
             setIsPlaying(false);
