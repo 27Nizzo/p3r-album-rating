@@ -252,6 +252,21 @@ export default function Home() {
     }
   };
 
+  // Select the album from the comunity
+
+  const handleSelectAlbumFromCommunity = (rev: any) => {
+  sfx.playClick();
+  setSelectedAlbum({
+    id: rev.albumId,
+    title: rev.albumTitle,
+    artist: rev.artistName,
+    coverUrl: rev.coverUrl,
+    releaseYear: rev.releaseYear || 'N/A',
+  });
+  // Rola a página suavemente para o topo para mostrar o Spotlight Album
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Carregar críticas ao iniciar
   useEffect(() => {
     fetchReviews();
@@ -632,39 +647,91 @@ export default function Home() {
             </motion.div>
           )}
 
-          {/* TAB 2: Comunidade */}
-          {activeTab === 'community' && (
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
-              {isLoadingReviews ? (
-                <div className="text-center py-8"><Loader2 className="w-8 h-8 text-persona-cyan animate-spin mx-auto mb-2" /><p className="font-mono text-xs text-persona-cyan/70">A CARREGAR BASE DE DADOS...</p></div>
-              ) : reviews.length === 0 ? (
-                <div className="bg-persona-dark/60 border border-persona-cyan/30 p-8 text-center -skew-x-6"><p className="skew-x-6 font-mono text-xs text-persona-cyan/60">AINDA NÃO EXISTEM CRÍTICAS NA BASE DE DADOS. SEJA O PRIMEIRA A AVALIAR!</p></div>
-              ) : (
-                reviews.map((rev) => (
-                  <div key={rev.id} onMouseEnter={() => sfx.playHover()} className="bg-persona-dark border-l-4 border-persona-cyan p-4 -skew-x-6 shadow-md flex gap-4 items-center">
-                    {rev.coverUrl && <img src={rev.coverUrl} alt={rev.albumTitle} className="w-14 h-14 object-cover border border-persona-cyan skew-x-6" />}
-                    <div className="skew-x-6 space-y-1 w-full">
-                      <div className="flex justify-between items-center border-b border-persona-cyan/20 pb-1">
-                        <div>
-                          <span className="font-black italic text-persona-cyan text-sm uppercase block">{rev.albumTitle}</span>
-                          <span className="text-[10px] font-mono text-persona-white/60 uppercase">{rev.artistName}</span>
-                        </div>
-                        <div className="flex text-persona-cyan">
-                          {Array.from({ length: rev.rating }).map((_, i) => (
-                            <Star key={i} className="w-3.5 h-3.5 fill-persona-cyan" />
-                          ))}
-                        </div>
-                      </div>
-                      <p className="text-xs font-mono text-persona-white/90 leading-relaxed pt-1">{rev.comment}</p>
-                      <span className="text-[10px] font-mono text-persona-cyan/50 block text-right">
-                        {new Date(rev.createdAt).toLocaleDateString()} {new Date(rev.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-            </motion.div>
+{/* TAB 2: Comunidade */}
+{activeTab === 'community' && (
+  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
+    {isLoadingReviews ? (
+      <div className="text-center py-8">
+        <Loader2 className="w-8 h-8 text-persona-cyan animate-spin mx-auto mb-2" />
+        <p className="font-mono text-xs text-persona-cyan/70">A CARREGAR BASE DE DADOS...</p>
+      </div>
+    ) : reviews.length === 0 ? (
+      <div className="bg-persona-dark/60 border border-persona-cyan/30 p-8 text-center -skew-x-6">
+        <p className="skew-x-6 font-mono text-xs text-persona-cyan/60">
+          AINDA NÃO EXISTEM CRÍTICAS NA BASE DE DADOS. SEJA O PRIMEIRA A AVALIAR!
+        </p>
+      </div>
+    ) : (
+      reviews.map((rev: any) => (
+        <div key={rev.id} onMouseEnter={() => sfx.playHover()} className="bg-persona-dark border-l-4 border-persona-cyan p-4 -skew-x-6 shadow-md flex gap-4 items-center">
+          {/* Capa clicável que carrega no Spotlight */}
+          {rev.coverUrl && (
+            <button 
+              onClick={() => handleSelectAlbumFromCommunity(rev)} 
+              className="skew-x-6 shrink-0 cursor-pointer group"
+              title="Carregar no Spotlight Album"
+            >
+              <img 
+                src={rev.coverUrl} 
+                alt={rev.albumTitle} 
+                className="w-14 h-14 object-cover border border-persona-cyan group-hover:opacity-80 group-hover:scale-105 transition-all" 
+              />
+            </button>
           )}
+
+          <div className="skew-x-6 space-y-1 w-full">
+            <div className="flex justify-between items-center border-b border-persona-cyan/20 pb-1">
+              <div>
+                {/* Título clicável que carrega no Spotlight */}
+                <button
+                  onClick={() => handleSelectAlbumFromCommunity(rev)}
+                  className="font-black italic text-persona-cyan text-sm uppercase block hover:underline text-left cursor-pointer"
+                >
+                  {rev.albumTitle}
+                </button>
+                <span className="text-[10px] font-mono text-persona-white/60 uppercase">{rev.artistName}</span>
+              </div>
+              <div className="flex text-persona-cyan">
+                {Array.from({ length: rev.rating }).map((_, i) => (
+                  <Star key={i} className="w-3.5 h-3.5 fill-persona-cyan" />
+                ))}
+              </div>
+            </div>
+
+            <p className="text-xs font-mono text-persona-white/90 leading-relaxed pt-1">{rev.comment}</p>
+
+            <div className="flex justify-between items-center pt-2 text-[10px] font-mono">
+              {/* Mantém o Link para o Perfil Público do Utilizador */}
+              {rev.user ? (
+                <Link
+                  href={`/profile/${rev.user.id}`}
+                  onMouseEnter={() => sfx.playHover()}
+                  onClick={() => sfx.playClick()}
+                  className="flex items-center gap-1.5 text-persona-cyan hover:underline uppercase font-bold cursor-pointer"
+                >
+                  <div className="w-4 h-4 rounded-full border border-persona-cyan overflow-hidden bg-persona-blue/40 flex items-center justify-center shrink-0">
+                    {rev.user.image ? (
+                      <img src={rev.user.image} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-2.5 h-2.5 text-persona-cyan" />
+                    )}
+                  </div>
+                  <span>BY {rev.user.name || 'OPERATIVE'}</span>
+                </Link>
+              ) : (
+                <span className="text-persona-white/40 uppercase">BY ANONYMOUS OPERATIVE</span>
+              )}
+
+              <span className="text-persona-cyan/50">
+                {new Date(rev.createdAt).toLocaleDateString()} {new Date(rev.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+        </div>
+      ))
+    )}
+  </motion.div>
+)}
 
           {/* TAB 3: Faixas do Álbum */}
           {activeTab === 'tracks' && (

@@ -44,3 +44,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Erro interno ao submeter crítica.' }, { status: 500 });
   }
 }
+
+export async function GET() {
+  try {
+    const reviews = await prisma.review.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ reviews }, { status: 200 });
+  } catch (error: any) {
+    console.error('Erro ao procurar reviews:', error);
+    return NextResponse.json(
+      { error: error?.message || 'Erro interno do servidor' },
+      { status: 500 }
+    );
+  }
+}
