@@ -18,6 +18,9 @@ model User {
   sessions      Session[]
   reviews       Review[]
   favorites     Favorite[]
+  likes         ReviewLike[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime   @default(now()) @updatedAt
 }
 
 model Favorite {
@@ -79,8 +82,21 @@ model Review {
   releaseYear String
   rating      Int
   comment     String
+  likes       ReviewLike[]
   createdAt   DateTime @default(now())
-
+  updatedAt   DateTime @updatedAt
   userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model ReviewLike {
+  id          String   @id  @default(cuid())
+  userId      String
+  reviewId    String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review      Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  @@unique([userId, reviewId])
 }

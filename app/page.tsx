@@ -9,7 +9,7 @@ import AuthModal from '@/components/AuthModal';
 import AudioPlayer from '@/components/AudioPlayer';
 import SfxToggle from '@/components/SfxToggle';
 import { sfx } from '@/lib/sfx';
-
+import ExpandableText from '@/components/ExpandableText';
 
 interface Album {
   id: string;
@@ -30,6 +30,7 @@ interface Track {
 
 interface Review {
   id: string;
+  albumId: string;
   albumTitle: string;
   artistName: string;
   coverUrl: string;
@@ -37,6 +38,13 @@ interface Review {
   rating: number;
   comment: string;
   createdAt: string;
+  user?: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  } | null;
+  likesCount?: number;
+  isLikedByMe?: boolean;
 }
 
 export default function Home() {
@@ -252,25 +260,65 @@ export default function Home() {
     }
   };
 
-  // Select the album from the comunity
+  // Handle likes
+  const handleToggleLike = async (reviewId: string) => {
+    if (!session) {
+      sfx.playClick();
+      setIsAuthModalOpen(true);
+      return;
+    }
 
-  const handleSelectAlbumFromCommunity = (rev: any) => {
-  sfx.playClick();
-  setSelectedAlbum({
-    id: rev.albumId,
-    title: rev.albumTitle,
-    artist: rev.artistName,
-    coverUrl: rev.coverUrl,
-    releaseYear: rev.releaseYear || 'N/A',
-  });
-  // Rola a página suavemente para o topo para mostrar o Spotlight Album
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+    sfx.playClick();
+
+    // Atualização otimista na interface (para ser instantâneo)
+    setReviews((prev) =>
+      prev.map((rev) => {
+        if (rev.id === reviewId) {
+          const isLiked = rev.isLikedByMe;
+          const currentCount = rev.likesCount || 0;
+          return {
+            ...rev,
+            isLikedByMe: !isLiked,
+            likesCount: isLiked ? Math.max(0, currentCount - 1) : currentCount + 1,
+          };
+        }
+        return rev;
+      })
+    );
+
+    try {
+      const res = await fetch('/api/reviews/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reviewId }),
+      });
+
+      if (!res.ok) {
+        fetchReviews();
+      }
+    } catch (err) {
+      console.error('Erro ao dar like:', err);
+      fetchReviews();
+    }
+  };
+
+  // Selecionar álbum da comunidade para carregar no Spotlight
+  const handleSelectAlbumFromCommunity = (rev: Review) => {
+    sfx.playClick();
+    setSelectedAlbum({
+      id: rev.albumId,
+      title: rev.albumTitle,
+      artist: rev.artistName,
+      coverUrl: rev.coverUrl,
+      releaseYear: rev.releaseYear || 'N/A',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Carregar críticas ao iniciar
   useEffect(() => {
     fetchReviews();
-  }, []);
+  }, [session]);
 
   // Obter Músicas e Estatísticas do Álbum Selecionado
   useEffect(() => {
@@ -482,35 +530,31 @@ export default function Home() {
         <motion.div key={selectedAlbum.id} initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.3 }} className="lg:col-span-5 relative group">
           <div className="bg-persona-blue/30 border-2 border-persona-cyan p-6 -skew-x-6 shadow-[0_0_25px_rgba(0,229,255,0.25)]">
             <div className="skew-x-6">
-              
-              
               <div className="flex justify-between items-center mb-4">
-  <div className="inline-flex items-center gap-1 text-xs font-bold uppercase bg-persona-cyan text-persona-dark px-2.5 py-1">
-    <Sparkles className="w-3.5 h-3.5" /> Spotlight Album
-  </div>
+                <div className="inline-flex items-center gap-1 text-xs font-bold uppercase bg-persona-cyan text-persona-dark px-2.5 py-1">
+                  <Sparkles className="w-3.5 h-3.5" /> Spotlight Album
+                </div>
 
-  {/* BOTÃO VELVET COMPENDIUM */}
-  {selectedAlbum.id !== 'default' && (
-    <button
-      onClick={toggleFavorite}
-      onMouseEnter={() => sfx.playHover()}
-      disabled={isTogglingFavorite}
-      title={isFavorite ? 'Remover do Velvet Compendium' : 'Registar no Velvet Compendium'}
-      className={`flex items-center gap-1.5 px-3 py-1 -skew-x-12 border font-mono text-xs font-bold uppercase transition-all cursor-pointer ${
-        isFavorite
-          ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_10px_rgba(0,229,255,0.6)]'
-          : 'bg-persona-dark/90 border-persona-cyan/50 text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark'
-      }`}
-    >
-      <div className="skew-x-12 flex items-center gap-1.5">
-        {isFavorite ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
-        <span>{isFavorite ? 'IN COMPENDIUM' : '+ COMPENDIUM'}</span>
-      </div>
-    </button>
-  )}
-</div>
-
-
+                {/* BOTÃO VELVET COMPENDIUM */}
+                {selectedAlbum.id !== 'default' && (
+                  <button
+                    onClick={toggleFavorite}
+                    onMouseEnter={() => sfx.playHover()}
+                    disabled={isTogglingFavorite}
+                    title={isFavorite ? 'Remover do Velvet Compendium' : 'Registar no Velvet Compendium'}
+                    className={`flex items-center gap-1.5 px-3 py-1 -skew-x-12 border font-mono text-xs font-bold uppercase transition-all cursor-pointer ${
+                      isFavorite
+                        ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_10px_rgba(0,229,255,0.6)]'
+                        : 'bg-persona-dark/90 border-persona-cyan/50 text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark'
+                    }`}
+                  >
+                    <div className="skew-x-12 flex items-center gap-1.5">
+                      {isFavorite ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+                      <span>{isFavorite ? 'IN COMPENDIUM' : '+ COMPENDIUM'}</span>
+                    </div>
+                  </button>
+                )}
+              </div>
 
               <div className="relative aspect-square bg-gradient-to-br from-persona-blue to-persona-dark border-2 border-persona-cyan mb-4 overflow-hidden flex items-center justify-center group">
                 {selectedAlbum.coverUrl ? (
@@ -573,165 +617,193 @@ export default function Home() {
           </div>
 
           {/* TAB 1: Form de Rating */}
-          {activeTab === 'rate' && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
-              {!session ? (
-                <div className="bg-persona-dark/90 border-2 border-persona-cyan/40 p-8 text-center -skew-x-6 space-y-4">
-                  <div className="skew-x-6 space-y-3">
-                    <p className="font-mono text-xs text-persona-cyan uppercase tracking-widest">
-                      ACESSO RESTRITO A OPERATIVOS
-                    </p>
-                    <p className="font-mono text-xs text-persona-white/70">
-                      Precisas de iniciar sessão com a tua conta para enviares avaliações e guardar as tuas críticas no teu perfil.
-                    </p>
-                    <button
-                      type="button"
-                      onMouseEnter={() => sfx.playHover()}
-                      onClick={() => { sfx.playClick(); setIsAuthModalOpen(true); }}
-                      className="bg-persona-cyan text-persona-dark font-black px-6 py-2 -skew-x-12 border border-persona-cyan hover:bg-white transition-all inline-flex items-center gap-2 text-xs uppercase italic cursor-pointer mt-2"
-                    >
-                      <LogIn className="w-4 h-4 skew-x-12" />
-                      <span className="skew-x-12">FAZER LOGIN AGORA</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmitReview} className="bg-persona-glass backdrop-blur-md border-2 border-persona-cyan/40 p-6 -skew-x-6 space-y-5">
-                  <div className="skew-x-6 space-y-4">
-                    <div>
-                      <label className="block text-xs font-mono text-persona-cyan uppercase tracking-widest mb-2">
-                        AVALIAÇÃO DE 1 A 5 ESTRELAS
-                      </label>
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <button 
-                            key={star} 
-                            type="button" 
-                            onMouseEnter={() => { sfx.playHover(); setHoverRating(star); }}
-                            onMouseLeave={() => setHoverRating(0)}
-                            onClick={() => { sfx.playClick(); setRating(star); }} 
-                            className="p-1 transition-transform hover:scale-125 focus:outline-none cursor-pointer"
-                          >
-                            <Star className={`w-8 h-8 ${star <= (hoverRating || rating) ? 'text-persona-cyan fill-persona-cyan drop-shadow-[0_0_8px_rgba(0,229,255,0.8)]' : 'text-persona-blue/40'}`} />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-mono text-persona-cyan uppercase tracking-widest mb-2">
-                        A TUA CRÍTICA / ANÁLISE
-                      </label>
-                      <textarea rows={4} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="ESCREVE AQUI AS TUAS IMPRESSÕES SOBRE O ÁLBUM..." className="w-full bg-persona-dark/90 border border-persona-cyan/50 p-3 text-persona-white font-mono text-xs focus:border-persona-cyan focus:outline-none focus:ring-1 focus:ring-persona-cyan placeholder-persona-cyan/30" />
-                    </div>
-
-                    <div className="flex justify-between items-center pt-2">
-                      {successMessage && (
-                        <span className="text-xs font-mono text-persona-cyan flex items-center gap-1 animate-bounce">
-                          <CheckCircle2 className="w-4 h-4" /> CRÍTICA GUARDADA NA BD!
-                        </span>
-                      )}
-                      <button 
-                        type="submit" 
-                        onMouseEnter={() => sfx.playHover()}
-                        disabled={rating === 0 || !comment.trim() || isSubmitting} 
-                        className="ml-auto bg-persona-blue border border-persona-cyan text-persona-white hover:bg-persona-cyan hover:text-persona-dark px-6 py-2.5 -skew-x-12 font-black italic uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 group cursor-pointer"
-                      >
-                        <span className="skew-x-12">{isSubmitting ? 'A GUARDAR...' : 'SUBMETER'}</span>
-                        <Send className="w-4 h-4 skew-x-12 group-hover:translate-x-1 transition-transform" />
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              )}
-            </motion.div>
-          )}
-
-{/* TAB 2: Comunidade */}
-{activeTab === 'community' && (
-  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
-    {isLoadingReviews ? (
-      <div className="text-center py-8">
-        <Loader2 className="w-8 h-8 text-persona-cyan animate-spin mx-auto mb-2" />
-        <p className="font-mono text-xs text-persona-cyan/70">A CARREGAR BASE DE DADOS...</p>
+{activeTab === 'rate' && (
+  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+    {!session ? (
+      <div className="bg-persona-dark/90 border-2 border-persona-cyan/40 p-8 text-center -skew-x-6 space-y-4">
+        <div className="skew-x-6 space-y-3">
+          <p className="font-mono text-xs text-persona-cyan uppercase tracking-widest">
+            ACESSO RESTRITO A OPERATIVOS
+          </p>
+          <p className="font-mono text-xs text-persona-white/70">
+            Precisas de iniciar sessão com a tua conta para enviares avaliações e guardar as tuas críticas no teu perfil.
+          </p>
+          <button
+            type="button"
+            onMouseEnter={() => sfx.playHover()}
+            onClick={() => { sfx.playClick(); setIsAuthModalOpen(true); }}
+            className="bg-persona-cyan text-persona-dark font-black px-6 py-2 -skew-x-12 border border-persona-cyan hover:bg-white transition-all inline-flex items-center gap-2 text-xs uppercase italic cursor-pointer mt-2"
+          >
+            <LogIn className="w-4 h-4 skew-x-12" />
+            <span className="skew-x-12">FAZER LOGIN AGORA</span>
+          </button>
+        </div>
       </div>
-    ) : reviews.length === 0 ? (
-      <div className="bg-persona-dark/60 border border-persona-cyan/30 p-8 text-center -skew-x-6">
-        <p className="skew-x-6 font-mono text-xs text-persona-cyan/60">
-          AINDA NÃO EXISTEM CRÍTICAS NA BASE DE DADOS. SEJA O PRIMEIRA A AVALIAR!
-        </p>
+    ) : selectedAlbum.id === 'default' ? (
+      /* 👈 NOVO AVISO QUANDO NENHUM ÁLBUM ESTÁ SELECIONADO */
+      <div className="bg-persona-dark/90 border-2 border-persona-cyan/40 p-8 text-center -skew-x-6">
+        <div className="skew-x-6 space-y-3">
+          <p className="font-mono text-xs text-persona-cyan uppercase tracking-widest font-bold">
+            NENHUM ÁLBUM SELECCIONADO
+          </p>
+          <p className="font-mono text-xs text-persona-white/70">
+            PESQUISA E SELECCIONA UM ÁLBUM NA BARRA DE PESQUISA PARA PODERES SUBMETER A TUA AVALIAÇÃO.
+          </p>
+        </div>
       </div>
     ) : (
-      reviews.map((rev: any) => (
-        <div key={rev.id} onMouseEnter={() => sfx.playHover()} className="bg-persona-dark border-l-4 border-persona-cyan p-4 -skew-x-6 shadow-md flex gap-4 items-center">
-          {/* Capa clicável que carrega no Spotlight */}
-          {rev.coverUrl && (
-            <button 
-              onClick={() => handleSelectAlbumFromCommunity(rev)} 
-              className="skew-x-6 shrink-0 cursor-pointer group"
-              title="Carregar no Spotlight Album"
-            >
-              <img 
-                src={rev.coverUrl} 
-                alt={rev.albumTitle} 
-                className="w-14 h-14 object-cover border border-persona-cyan group-hover:opacity-80 group-hover:scale-105 transition-all" 
-              />
-            </button>
-          )}
-
-          <div className="skew-x-6 space-y-1 w-full">
-            <div className="flex justify-between items-center border-b border-persona-cyan/20 pb-1">
-              <div>
-                {/* Título clicável que carrega no Spotlight */}
-                <button
-                  onClick={() => handleSelectAlbumFromCommunity(rev)}
-                  className="font-black italic text-persona-cyan text-sm uppercase block hover:underline text-left cursor-pointer"
+      <form onSubmit={handleSubmitReview} className="bg-persona-glass backdrop-blur-md border-2 border-persona-cyan/40 p-6 -skew-x-6 space-y-5">
+        <div className="skew-x-6 space-y-4">
+          <div>
+            <label className="block text-xs font-mono text-persona-cyan uppercase tracking-widest mb-2">
+              AVALIAÇÃO DE 1 A 5 ESTRELAS
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button 
+                  key={star} 
+                  type="button" 
+                  onMouseEnter={() => { sfx.playHover(); setHoverRating(star); }}
+                  onMouseLeave={() => setHoverRating(0)}
+                  onClick={() => { sfx.playClick(); setRating(star); }} 
+                  className="p-1 transition-transform hover:scale-125 focus:outline-none cursor-pointer"
                 >
-                  {rev.albumTitle}
+                  <Star className={`w-8 h-8 ${star <= (hoverRating || rating) ? 'text-persona-cyan fill-persona-cyan drop-shadow-[0_0_8px_rgba(0,229,255,0.8)]' : 'text-persona-blue/40'}`} />
                 </button>
-                <span className="text-[10px] font-mono text-persona-white/60 uppercase">{rev.artistName}</span>
-              </div>
-              <div className="flex text-persona-cyan">
-                {Array.from({ length: rev.rating }).map((_, i) => (
-                  <Star key={i} className="w-3.5 h-3.5 fill-persona-cyan" />
-                ))}
-              </div>
-            </div>
-
-            <p className="text-xs font-mono text-persona-white/90 leading-relaxed pt-1">{rev.comment}</p>
-
-            <div className="flex justify-between items-center pt-2 text-[10px] font-mono">
-              {/* Mantém o Link para o Perfil Público do Utilizador */}
-              {rev.user ? (
-                <Link
-                  href={`/profile/${rev.user.id}`}
-                  onMouseEnter={() => sfx.playHover()}
-                  onClick={() => sfx.playClick()}
-                  className="flex items-center gap-1.5 text-persona-cyan hover:underline uppercase font-bold cursor-pointer"
-                >
-                  <div className="w-4 h-4 rounded-full border border-persona-cyan overflow-hidden bg-persona-blue/40 flex items-center justify-center shrink-0">
-                    {rev.user.image ? (
-                      <img src={rev.user.image} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-2.5 h-2.5 text-persona-cyan" />
-                    )}
-                  </div>
-                  <span>BY {rev.user.name || 'OPERATIVE'}</span>
-                </Link>
-              ) : (
-                <span className="text-persona-white/40 uppercase">BY ANONYMOUS OPERATIVE</span>
-              )}
-
-              <span className="text-persona-cyan/50">
-                {new Date(rev.createdAt).toLocaleDateString()} {new Date(rev.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
+              ))}
             </div>
           </div>
+
+          <div>
+            <label className="block text-xs font-mono text-persona-cyan uppercase tracking-widest mb-2">
+              A TUA CRÍTICA / ANÁLISE
+            </label>
+            <textarea rows={4} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="ESCREVE AQUI AS TUAS IMPRESSÕES SOBRE O ÁLBUM..." className="w-full bg-persona-dark/90 border border-persona-cyan/50 p-3 text-persona-white font-mono text-xs focus:border-persona-cyan focus:outline-none focus:ring-1 focus:ring-persona-cyan placeholder-persona-cyan/30" />
+          </div>
+
+          <div className="flex justify-between items-center pt-2">
+            {successMessage && (
+              <span className="text-xs font-mono text-persona-cyan flex items-center gap-1 animate-bounce">
+                <CheckCircle2 className="w-4 h-4" /> CRÍTICA GUARDADA NA BD!
+              </span>
+            )}
+            <button 
+              type="submit" 
+              onMouseEnter={() => sfx.playHover()}
+              disabled={rating === 0 || !comment.trim() || isSubmitting} 
+              className="ml-auto bg-persona-blue border border-persona-cyan text-persona-white hover:bg-persona-cyan hover:text-persona-dark px-6 py-2.5 -skew-x-12 font-black italic uppercase transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 group cursor-pointer"
+            >
+              <span className="skew-x-12">{isSubmitting ? 'A GUARDAR...' : 'SUBMETER'}</span>
+              <Send className="w-4 h-4 skew-x-12 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
         </div>
-      ))
+      </form>
     )}
   </motion.div>
 )}
+
+          {/* TAB 2: Comunidade */}
+          {activeTab === 'community' && (
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4 max-h-[420px] overflow-y-auto pr-2">
+              {isLoadingReviews ? (
+                <div className="text-center py-8">
+                  <Loader2 className="w-8 h-8 text-persona-cyan animate-spin mx-auto mb-2" />
+                  <p className="font-mono text-xs text-persona-cyan/70">A CARREGAR BASE DE DADOS...</p>
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="bg-persona-dark/60 border border-persona-cyan/30 p-8 text-center -skew-x-6">
+                  <p className="skew-x-6 font-mono text-xs text-persona-cyan/60">
+                    AINDA NÃO EXISTEM CRÍTICAS NA BASE DE DADOS. SEJA O PRIMEIRA A AVALIAR!
+                  </p>
+                </div>
+              ) : (
+                reviews.map((rev) => (
+                  <div key={rev.id} onMouseEnter={() => sfx.playHover()} className="bg-persona-dark border-l-4 border-persona-cyan p-4 -skew-x-6 shadow-md flex gap-4 items-center">
+                    {/* Capa clicável que carrega no Spotlight */}
+                    {rev.coverUrl && (
+                      <button 
+                        onClick={() => handleSelectAlbumFromCommunity(rev)} 
+                        className="skew-x-6 shrink-0 cursor-pointer group"
+                        title="Carregar no Spotlight Album"
+                      >
+                        <img 
+                          src={rev.coverUrl} 
+                          alt={rev.albumTitle} 
+                          className="w-14 h-14 object-cover border border-persona-cyan group-hover:opacity-80 group-hover:scale-105 transition-all" 
+                        />
+                      </button>
+                    )}
+
+                    <div className="skew-x-6 space-y-1 w-full">
+                      <div className="flex justify-between items-center border-b border-persona-cyan/20 pb-1">
+                        <div>
+                          {/* Título clicável que carrega no Spotlight */}
+                          <button
+                            onClick={() => handleSelectAlbumFromCommunity(rev)}
+                            className="font-black italic text-persona-cyan text-sm uppercase block hover:underline text-left cursor-pointer"
+                          >
+                            {rev.albumTitle}
+                          </button>
+                          <span className="text-[10px] font-mono text-persona-white/60 uppercase">{rev.artistName}</span>
+                        </div>
+                        <div className="flex text-persona-cyan">
+                          {Array.from({ length: rev.rating }).map((_, i) => (
+                            <Star key={i} className="w-3.5 h-3.5 fill-persona-cyan" />
+                          ))}
+                        </div>
+                      </div>
+                          <ExpandableText text={rev.comment} maxLength={150} />
+
+                      <div className="flex justify-between items-center pt-2 text-[10px] font-mono">
+                        {/* Link para o Perfil Público do Utilizador */}
+                        {rev.user ? (
+                          <Link
+                            href={`/profile/${rev.user.id}`}
+                            onMouseEnter={() => sfx.playHover()}
+                            onClick={() => sfx.playClick()}
+                            className="flex items-center gap-1.5 text-persona-cyan hover:underline uppercase font-bold cursor-pointer"
+                          >
+                            <div className="w-4 h-4 rounded-full border border-persona-cyan overflow-hidden bg-persona-blue/40 flex items-center justify-center shrink-0">
+                              {rev.user.image ? (
+                                <img src={rev.user.image} alt="Avatar" className="w-full h-full object-cover" />
+                              ) : (
+                                <User className="w-2.5 h-2.5 text-persona-cyan" />
+                              )}
+                            </div>
+                            <span>BY {rev.user.name || 'OPERATIVE'}</span>
+                          </Link>
+                        ) : (
+                          <span className="text-persona-white/40 uppercase">BY ANONYMOUS OPERATIVE</span>
+                        )}
+
+                        <div className="flex items-center gap-3">
+                          {/* BOTÃO DE LIKE / UPVOTE */}
+                          <button
+                            onClick={() => handleToggleLike(rev.id)}
+                            onMouseEnter={() => sfx.playHover()}
+                            className={`flex items-center gap-1 px-2 py-0.5 border -skew-x-12 transition-all cursor-pointer ${
+                              rev.isLikedByMe
+                                ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_8px_rgba(0,229,255,0.6)] font-bold'
+                                : 'bg-persona-dark/80 text-persona-cyan/70 border-persona-cyan/40 hover:border-persona-cyan hover:text-persona-cyan'
+                            }`}
+                            title={rev.isLikedByMe ? 'Remover Like' : 'Dar Like'}
+                          >
+                            <Flame className={`w-3 h-3 skew-x-12 ${rev.isLikedByMe ? 'fill-persona-dark' : ''}`} />
+                            <span className="skew-x-12 font-mono text-[10px]">{rev.likesCount || 0}</span>
+                          </button>
+
+                          <span className="text-persona-cyan/50">
+                            {new Date(rev.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </motion.div>
+          )}
 
           {/* TAB 3: Faixas do Álbum */}
           {activeTab === 'tracks' && (

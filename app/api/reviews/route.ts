@@ -20,6 +20,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Dados incompletos.' }, { status: 400 });
     }
 
+
+    if (!albumId || albumId === 'default') {
+      return NextResponse.json(
+        {error: 'Select a valid album for the review!'},
+        {status: 400}
+      );
+    }
+
     // Cria a review conectando diretamente ao Utilizador na BD pelo Email
     const newReview = await prisma.review.create({
       data: {
@@ -47,7 +55,17 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const reviews = await prisma.review.findMany({
+    const session = await auth();
+    let currentUser = null;
+
+    if (session?.user?.email) {
+      currentUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true },
+      });
+    }
+
+    const rawReviews = await prisma.review.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         user: {
@@ -57,8 +75,28 @@ export async function GET() {
             image: true,
           },
         },
+        likes: {
+          select: {
+            userId: true,
+          },
+        },
       },
     });
+
+    const reviews = rawReviews.map((rev) => ({
+      id: rev.id,
+      albumId: rev.albumId,
+      albumTitle: rev.albumTitle,
+      artistName: rev.artistName,
+      coverUrl: rev.coverUrl,
+      releaseYear: rev.releaseYear,
+      rating: rev.rating,
+      comment: rev.comment,
+      createdAt: rev.createdAt,
+      user: rev.user,
+      likesCount: rev.likes.length,
+      isLikedByMe: currentUser ? rev.likes.some((l) => l.userId === currentUser.id) : false,
+    }));
 
     return NextResponse.json({ reviews }, { status: 200 });
   } catch (error: any) {

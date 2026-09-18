@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import SfxToggle from '@/components/SfxToggle';
 import { sfx } from '@/lib/sfx';
+import ExpandableText from '@/components/ExpandableText';
 
 interface Review {
   id: string;
@@ -237,7 +238,9 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                     <div className="min-w-0">
                       <p className="font-black italic text-sm text-persona-cyan uppercase truncate">{rev.albumTitle}</p>
                       <p className="text-xs font-mono text-persona-white/60 uppercase truncate">{rev.artistName}</p>
-                      <p className="text-xs font-mono text-persona-white/90 truncate mt-1 italic">"{rev.comment}"</p>
+                      <div className="mt-1">
+                          <ExpandableText text={rev.comment} maxLength={120} />
+                      </div>
                     </div>
                   </div>
                   <div className="flex text-persona-cyan shrink-0">
