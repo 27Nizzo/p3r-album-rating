@@ -92,7 +92,7 @@ export default function RankingsPage() {
             className="flex items-center gap-2 bg-persona-blue/40 border border-persona-cyan px-4 py-1.5 -skew-x-12 text-xs font-mono text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark transition-all cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 skew-x-12" />
-            <span className="skew-x-12 font-bold uppercase">VOLTAR À HOMEPAGE</span>
+            <span className="skew-x-12 font-bold uppercase">HOMEPAGE</span>
           </Link>
           <SfxToggle />
         </div>

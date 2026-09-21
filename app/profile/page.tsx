@@ -25,6 +25,7 @@ import SfxToggle from '@/components/SfxToggle';
 import { sfx } from '@/lib/sfx';
 import ExpandableText from '@/components/ExpandableText';
 import SocialStats from '@/components/SocialStats';
+import { userAgent } from 'next/server';
 
 interface Review {
   id: string;
@@ -34,6 +35,7 @@ interface Review {
   rating: number;
   comment: string;
   createdAt: string;
+  likesCount?: number;
 }
 
 interface Favorite {
@@ -63,7 +65,7 @@ export default function ProfilePage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Estados de Filtro, Ordenação e Abas do Perfil
-  const [activeTab, setActiveTab] = useState<'reviews' | 'compendium'>('reviews');
+  const [activeTab, setActiveTab] = useState<'reviews' | 'compendium' | 'stats'>('reviews');
   const [filterRating, setFilterRating] = useState<number | 'all'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest');
 
@@ -177,19 +179,15 @@ export default function ProfilePage() {
 
   // Estatísticas Rápidas & Cálculo para os Social Stats
   const totalReviews = userReviews.length;
-  const averageRating =
-    totalReviews > 0
-      ? (userReviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
-      : '0.0';
 
   const topAlbum =
     userReviews.length > 0
       ? [...userReviews].sort((a, b) => b.rating - a.rating)[0]
       : null;
 
-  // Cálculo de estatísticas para o SocialStats P3R
+  // Métricas calculadas para os Social Stats
   const reviewsCount = userReviews.length;
-  const totalLikes = 0; // Podes ligar à contagem real de likes se a API devolver este dado
+  const totalLikes = userReviews.reduce((acc, rev) => acc + (rev.likesCount || 0), 0);
   const compendiumCount = favorites.length;
   const uniqueArtistsCount = new Set(userReviews.map((r) => r.artistName)).size;
 
@@ -226,7 +224,7 @@ export default function ProfilePage() {
           className="inline-flex items-center gap-2 bg-persona-blue/30 border border-persona-cyan/50 text-persona-cyan px-4 py-2 -skew-x-12 hover:bg-persona-cyan hover:text-persona-dark font-black italic text-xs uppercase transition-all"
         >
           <ArrowLeft className="w-4 h-4 skew-x-12" />
-          <span className="skew-x-12">VOLTAR À PÁGINA PRINCIPAL</span>
+          <span className="skew-x-12">Homepage</span>
         </Link>
         <SfxToggle />
       </div>
@@ -320,17 +318,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Social Stats Estilo Persona 3 Reload */}
-      <div className="mb-8">
-        <SocialStats
-          reviewsCount={reviewsCount}
-          totalLikes={totalLikes}
-          compendiumCount={compendiumCount}
-          uniqueArtistsCount={uniqueArtistsCount}
-        />
-      </div>
-
-      {/* Painel de Estatísticas */}
+      {/* Painel de Estatísticas Rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div className="bg-persona-glass backdrop-blur-md border-2 border-persona-cyan/40 p-4 -skew-x-6 flex items-center gap-4">
           <div className="p-3 bg-persona-cyan/10 border border-persona-cyan skew-x-6">
@@ -368,8 +356,8 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* NAVEGAÇÃO ENTRE REVIEWS E VELVET COMPENDIUM */}
-      <div className="flex gap-3 mb-4">
+      {/* NAVEGAÇÃO ENTRE REVIEWS, VELVET COMPENDIUM E VELVET STATS */}
+      <div className="flex flex-wrap gap-3 mb-4">
         <button
           onMouseEnter={() => sfx.playHover()}
           onClick={() => { sfx.playClick(); setActiveTab('reviews'); }}
@@ -380,7 +368,7 @@ export default function ProfilePage() {
           }`}
         >
           <Flame className="w-4 h-4 skew-x-12" />
-          <span className="skew-x-12">REVIEWS ({userReviews.length})</span>
+          <span className="skew-x-12">01 // REVIEWS ({userReviews.length})</span>
         </button>
 
         <button
@@ -393,7 +381,20 @@ export default function ProfilePage() {
           }`}
         >
           <BookmarkCheck className="w-4 h-4 skew-x-12" />
-          <span className="skew-x-12">VELVET COMPENDIUM ({favorites.length})</span>
+          <span className="skew-x-12">02 // COMPENDIUM ({favorites.length})</span>
+        </button>
+
+        <button
+          onMouseEnter={() => sfx.playHover()}
+          onClick={() => { sfx.playClick(); setActiveTab('stats'); }}
+          className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
+            activeTab === 'stats'
+              ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]'
+              : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 skew-x-12" />
+          <span className="skew-x-12">03 // VELVET STATS</span>
         </button>
       </div>
 
@@ -580,6 +581,16 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* ABA 3: VELVET STATS */}
+      {activeTab === 'stats' && (
+        <SocialStats
+          reviewsCount={reviewsCount}
+          totalLikes={totalLikes}
+          compendiumCount={compendiumCount}
+          uniqueArtistsCount={uniqueArtistsCount}
+        />
       )}
     </main>
   );

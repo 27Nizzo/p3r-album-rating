@@ -55,10 +55,10 @@ export default function ShareButton({ title, text, url }: ShareButtonProps) {
           setIsOpen(!isOpen);
         }}
         className="bg-persona-blue/40 border border-persona-cyan text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark px-3 py-1.5 -skew-x-12 font-black italic text-xs uppercase transition-all flex items-center gap-2 cursor-pointer"
-        title="Partilhar"
+        title="Share"
       >
         <Share2 className="w-3.5 h-3.5 skew-x-12" />
-        <span className="skew-x-12">PARTILHAR</span>
+        <span className="skew-x-12">Share</span>
       </button>
 
       {/* Menu Suspenso de Opções de Partilha */}

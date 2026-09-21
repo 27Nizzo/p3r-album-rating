@@ -16,10 +16,21 @@ export async function GET() {
           email: session.user.email,
         },
       },
+      include: {
+        _count: {
+          select: { likes: true },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ reviews });
+    // Mapeia o resultado para disponibilizar diretamente a propriedade likesCount
+    const formattedReviews = reviews.map((rev) => ({
+      ...rev,
+      likesCount: rev._count.likes,
+    }));
+
+    return NextResponse.json({ reviews: formattedReviews });
   } catch (error) {
     console.error('❌ Erro ao buscar reviews do utilizador:', error);
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });

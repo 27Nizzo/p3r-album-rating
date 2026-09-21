@@ -35,6 +35,7 @@ interface Album {
   id: string;
   title: string;
   artist: string;
+  artistId?: string;
   coverUrl: string;
   releaseYear: string;
 }
@@ -70,12 +71,13 @@ interface Review {
 export default function Home() {
   const { data: session } = useSession();
 
+  // Estado do Sistema de Toast P3R
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const showToast = (
     type: "success" | "error" | "info",
     title: string,
-    message?: string
+    message?: string,
   ) => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, type, title, message }]);
@@ -92,6 +94,7 @@ export default function Home() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  // 1. Estados do Leitor de Áudio Neon
   const [currentTrack, setCurrentTrack] = useState<{
     id: string;
     name: string;
@@ -102,6 +105,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // 2. Outros Estados da Aplicação
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Album[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -124,14 +128,16 @@ export default function Home() {
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"rate" | "community" | "tracks">(
-    "rate"
+    "rate",
   );
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  // Estados do Compendium
   const [isFavorite, setIsFavorite] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
+  // Estados para filtros e Pesquisa na Comunidade
   const [communitySearch, setCommunitySearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
 
@@ -139,6 +145,7 @@ export default function Home() {
     "recent" | "popular" | "rating-desc" | "rating-asc"
   >("recent");
 
+  // Reviews filtradas para a Tab da Comunidade
   const filteredReviews = reviews
     .filter((rev) => {
       const matchesSearch =
@@ -168,6 +175,7 @@ export default function Home() {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
+  // Verificar se o álbum está no Compendium
   const checkIsFavorite = async () => {
     if (!session || !selectedAlbum.id || selectedAlbum.id === "default") {
       setIsFavorite(false);
@@ -182,7 +190,7 @@ export default function Home() {
       const data = JSON.parse(text);
       if (data.favorites) {
         const found = data.favorites.some(
-          (fav: any) => fav.albumId === selectedAlbum.id
+          (fav: any) => fav.albumId === selectedAlbum.id,
         );
         setIsFavorite(found);
       }
@@ -191,6 +199,7 @@ export default function Home() {
     }
   };
 
+  // Adicionar / Remover do Compendium
   const toggleFavorite = async () => {
     if (!session) {
       sfx.playClick();
@@ -216,7 +225,11 @@ export default function Home() {
           setIsFavorite(false);
           showToast("info", "COMPENDIUM", "Álbum removido da tua coleção.");
         } else {
-          showToast("error", "ERRO COMPENDIUM", "Não foi possível remover o álbum.");
+          showToast(
+            "error",
+            "ERRO COMPENDIUM",
+            "Não foi possível remover o álbum.",
+          );
         }
       } else {
         const res = await fetch("/api/favorites", {
@@ -232,19 +245,32 @@ export default function Home() {
         });
         if (res.ok) {
           setIsFavorite(true);
-          showToast("success", "COMPENDIUM", "Álbum adicionado ao teu Compendium!");
+          showToast(
+            "success",
+            "COMPENDIUM",
+            "Álbum adicionado ao teu Compendium!",
+          );
         } else {
-          showToast("error", "ERRO COMPENDIUM", "Não foi possível adicionar o álbum.");
+          showToast(
+            "error",
+            "ERRO COMPENDIUM",
+            "Não foi possível adicionar o álbum.",
+          );
         }
       }
     } catch (err) {
       console.error("Erro ao alterar compendium:", err);
-      showToast("error", "ERRO COMPENDIUM", "Não foi possível atualizar o Compendium.");
+      showToast(
+        "error",
+        "ERRO COMPENDIUM",
+        "Não foi possível atualizar o Compendium.",
+      );
     } finally {
       setIsTogglingFavorite(false);
     }
   };
 
+  // Estatísticas do Álbum
   const [albumStats, setAlbumStats] = useState<{
     averageRating: number;
     totalReviews: number;
@@ -253,6 +279,7 @@ export default function Home() {
     totalReviews: 0,
   });
 
+  // Lógica de Reprodução de Áudio
   const handlePlayPreview = (track: Track) => {
     sfx.playClick();
     if (!track.previewUrl) return;
@@ -303,7 +330,8 @@ export default function Home() {
       if (!res.ok) return;
 
       const text = await res.text();
-      if (!text || text.trim().length === 0 || text.trim().startsWith("<")) return;
+      if (!text || text.trim().length === 0 || text.trim().startsWith("<"))
+        return;
 
       const data = JSON.parse(text);
       if (data.reviews) setReviews(data.reviews);
@@ -329,7 +357,8 @@ export default function Home() {
       }
 
       const text = await res.text();
-      if (!text || text.trim().length === 0 || text.trim().startsWith("<")) return;
+      if (!text || text.trim().length === 0 || text.trim().startsWith("<"))
+        return;
 
       const data = JSON.parse(text);
       setAlbumStats(data);
@@ -353,9 +382,17 @@ export default function Home() {
     const willBeLiked = !currentlyLiked;
 
     if (willBeLiked) {
-      showToast("success", "OPERATIVE LIKE", "Registado o teu apoio a esta análise!");
+      showToast(
+        "success",
+        "OPERATIVE LIKE",
+        "Registado o teu apoio a esta análise!",
+      );
     } else {
-      showToast("info", "LIKE REMOVIDO", "Removeste o teu apoio a esta análise.");
+      showToast(
+        "info",
+        "LIKE REMOVIDO",
+        "Removeste o teu apoio a esta análise.",
+      );
     }
 
     setReviews((prev) =>
@@ -371,7 +408,7 @@ export default function Home() {
           };
         }
         return rev;
-      })
+      }),
     );
 
     try {
@@ -382,7 +419,11 @@ export default function Home() {
       });
 
       if (!res.ok) {
-        showToast("error", "ERRO LIKE", "Não foi possível sincronizar o teu Like.");
+        showToast(
+          "error",
+          "ERRO LIKE",
+          "Não foi possível sincronizar o teu Like.",
+        );
         fetchReviews();
       }
     } catch (err) {
@@ -445,7 +486,7 @@ export default function Home() {
       setIsSearching(true);
       try {
         const res = await fetch(
-          `/api/spotify/search?q=${encodeURIComponent(query)}`
+          `/api/spotify/search?q=${encodeURIComponent(query)}`,
         );
         const data = await res.json();
         setSearchResults(data.albums || []);
@@ -483,11 +524,19 @@ export default function Home() {
       if (res.ok) {
         setComment("");
         setRating(0);
-        showToast("success", "CRÍTICA REGISTADA", "A tua avaliação foi guardada com sucesso!");
+        showToast(
+          "success",
+          "CRÍTICA REGISTADA",
+          "A tua avaliação foi guardada com sucesso!",
+        );
         fetchReviews();
         fetchAlbumStats();
       } else {
-        showToast("error", "ERRO NA SUBMISSÃO", "Não foi possível publicar a tua crítica.");
+        showToast(
+          "error",
+          "ERRO NA SUBMISSÃO",
+          "Não foi possível publicar a tua crítica.",
+        );
       }
     } catch (err) {
       console.error("Erro ao guardar:", err);
@@ -523,79 +572,85 @@ export default function Home() {
             VELVET <span className="text-persona-cyan">RECORDS</span>
           </h1>
         </motion.div>
-        <Link
-          href="/rankings"
-          onMouseEnter={() => sfx.playHover()}
-          onClick={() => sfx.playClick()}
-          className="bg-persona-blue/30 border border-persona-cyan text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark px-3 py-1.5 -skew-x-12 font-black italic text-xs uppercase transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-          title="Ver Velvet Rankings"
-        >
-          <Trophy className="w-4 h-4 skew-x-12" />
-          <span className="skew-x-12 hidden sm:inline">RANKINGS</span>
-        </Link>
+
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-          {/* Barra de Pesquisa */}
-          <div className="relative w-full md:w-80">
-            <div className="relative flex items-center bg-persona-dark/90 border-2 border-persona-cyan -skew-x-12 px-3 py-1.5 focus-within:shadow-[0_0_15px_rgba(0,229,255,0.4)] transition-all">
-              {isSearching ? (
-                <Loader2 className="w-4 h-4 text-persona-cyan animate-spin skew-x-12 mr-2" />
-              ) : (
-                <Search className="w-4 h-4 text-persona-cyan skew-x-12 mr-2" />
-              )}
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="PESQUISAR ÁLBUM..."
-                className="bg-transparent text-persona-white placeholder-persona-cyan/40 text-xs font-mono tracking-wider focus:outline-none w-full skew-x-12 uppercase"
-              />
-            </div>
-            <AnimatePresence>
-              {searchResults.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute z-50 left-0 right-0 mt-2 bg-persona-dark border-2 border-persona-cyan shadow-[0_10px_30px_rgba(0,0,0,0.8)] max-h-80 overflow-y-auto"
-                >
-                  {searchResults.map((album) => (
-                    <div
-                      key={album.id}
-                      onMouseEnter={() => sfx.playHover()}
-                      onClick={() => {
-                        sfx.playClick();
-                        setSelectedAlbum(album);
-                        setQuery("");
-                        setSearchResults([]);
-                      }}
-                      className="flex items-center gap-3 p-2.5 border-b border-persona-cyan/20 hover:bg-persona-blue/40 cursor-pointer transition-colors group"
-                    >
-                      {album.coverUrl ? (
-                        <img
-                          src={album.coverUrl}
-                          alt={album.title}
-                          className="w-10 h-10 object-cover border border-persona-cyan"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 bg-persona-blue flex items-center justify-center">
-                          <Disc className="w-5 h-5 text-persona-cyan" />
+          {/* Grupo: Pesquisa + Botão de Rankings ao lado direito */}
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            {/* Barra de Pesquisa */}
+            <div className="relative w-full md:w-80">
+              <div className="relative flex items-center bg-persona-dark/90 border-2 border-persona-cyan -skew-x-12 px-3 py-1.5 focus-within:shadow-[0_0_15px_rgba(0,229,255,0.4)] transition-all">
+                {isSearching ? (
+                  <Loader2 className="w-4 h-4 text-persona-cyan animate-spin skew-x-12 mr-2" />
+                ) : (
+                  <Search className="w-4 h-4 text-persona-cyan skew-x-12 mr-2" />
+                )}
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="PESQUISAR ÁLBUM..."
+                  className="bg-transparent text-persona-white placeholder-persona-cyan/40 text-xs font-mono tracking-wider focus:outline-none w-full skew-x-12 uppercase"
+                />
+              </div>
+              <AnimatePresence>
+                {searchResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute z-50 left-0 right-0 mt-2 bg-persona-dark border-2 border-persona-cyan shadow-[0_10px_30px_rgba(0,0,0,0.8)] max-h-80 overflow-y-auto"
+                  >
+                    {searchResults.map((album) => (
+                      <div
+                        key={album.id}
+                        onMouseEnter={() => sfx.playHover()}
+                        onClick={() => {
+                          sfx.playClick();
+                          setSelectedAlbum(album);
+                          setQuery("");
+                          setSearchResults([]);
+                        }}
+                        className="flex items-center gap-3 p-2.5 border-b border-persona-cyan/20 hover:bg-persona-blue/40 cursor-pointer transition-colors group"
+                      >
+                        {album.coverUrl ? (
+                          <img
+                            src={album.coverUrl}
+                            alt={album.title}
+                            className="w-10 h-10 object-cover border border-persona-cyan"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-persona-blue flex items-center justify-center">
+                            <Disc className="w-5 h-5 text-persona-cyan" />
+                          </div>
+                        )}
+                        <div className="overflow-hidden">
+                          <p className="text-sm font-bold truncate group-hover:text-persona-cyan uppercase italic">
+                            {album.title}
+                          </p>
+                          <p className="text-xs font-mono text-persona-white/60 truncate uppercase">
+                            {album.artist} ({album.releaseYear})
+                          </p>
                         </div>
-                      )}
-                      <div className="overflow-hidden">
-                        <p className="text-sm font-bold truncate group-hover:text-persona-cyan uppercase italic">
-                          {album.title}
-                        </p>
-                        <p className="text-xs font-mono text-persona-white/60 truncate uppercase">
-                          {album.artist} ({album.releaseYear})
-                        </p>
                       </div>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Botão Rankings à direita da barra de pesquisa */}
+            <Link
+              href="/rankings"
+              onMouseEnter={() => sfx.playHover()}
+              onClick={() => sfx.playClick()}
+              className="bg-persona-blue/30 border border-persona-cyan text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark px-3 py-2 -skew-x-12 font-black italic text-xs uppercase transition-all flex items-center gap-1.5 cursor-pointer shrink-0 h-[35px]"
+              title="Ver Velvet Rankings"
+            >
+              <Trophy className="w-6 h-6 skew-x-12" />
+            </Link>
           </div>
 
+          {/* Área de Autenticação + SFX Toggle */}
           <div className="flex items-center gap-3">
             <SfxToggle />
 
@@ -669,6 +724,7 @@ export default function Home() {
                   <Sparkles className="w-3.5 h-3.5" /> Spotlight Album
                 </div>
 
+                {/* BOTÃO VELVET COMPENDIUM */}
                 {selectedAlbum.id !== "default" && (
                   <button
                     onClick={toggleFavorite}
@@ -710,28 +766,26 @@ export default function Home() {
                   <Disc className="w-32 h-32 text-persona-cyan/40 animate-pulse" />
                 )}
               </div>
+              <h2 className="text-3xl font-black uppercase italic tracking-tight text-persona-white leading-tight">
+                {selectedAlbum.title}
+              </h2>
 
-              {/* TÍTULO DO ÁLBUM AGORA ABRE A PÁGINA DO ÁLBUM (/album/[id]) */}
-              {selectedAlbum.id !== "default" ? (
+              {/* LINK CORRIGIDO PARA O DOSSIÊ DO ARTISTA */}
+              {selectedAlbum.id !== "default" && selectedAlbum.artistId ? (
                 <Link
-                  href={`/album/${selectedAlbum.id}`}
+                  href={`/artist/${selectedAlbum.artistId}`}
                   onMouseEnter={() => sfx.playHover()}
                   onClick={() => sfx.playClick()}
-                  className="text-3xl font-black uppercase italic tracking-tight text-persona-white hover:text-persona-cyan transition-colors leading-tight block mb-1"
-                  title={`Ver detalhes do álbum ${selectedAlbum.title}`}
+                  className="text-persona-cyan font-bold tracking-widest uppercase text-base mb-2 inline-block hover:underline hover:text-white transition-colors cursor-pointer"
+                  title={`Ver dossiê de ${selectedAlbum.artist}`}
                 >
-                  {selectedAlbum.title} 
+                  {selectedAlbum.artist} →
                 </Link>
               ) : (
-                <h2 className="text-3xl font-black uppercase italic tracking-tight text-persona-white leading-tight mb-1">
-                  {selectedAlbum.title}
-                </h2>
+                <p className="text-persona-cyan font-bold tracking-widest uppercase text-base mb-2">
+                  {selectedAlbum.artist}
+                </p>
               )}
-
-              {/* ARTISTA É APENAS TEXTO */}
-              <p className="text-persona-cyan font-bold tracking-widest uppercase text-base mb-2">
-                {selectedAlbum.artist}
-              </p>
 
               <div className="flex items-center justify-between mt-4 text-xs font-mono text-persona-white/70 border-t border-persona-cyan/20 pt-3">
                 <div className="flex items-center gap-2">
@@ -739,7 +793,7 @@ export default function Home() {
                   {selectedAlbum.releaseYear}
                 </div>
 
-                <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-2.5 py-1 -skew-x-12">
+                <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-3 py-1 -skew-x-12 mr-4 sm:mr-6 shadow-[0_0_10px_rgba(0,229,255,0.3)]">
                   <Star className="w-3.5 h-3.5 text-persona-cyan fill-persona-cyan skew-x-12" />
                   <span className="font-mono text-xs font-bold text-persona-cyan skew-x-12">
                     {albumStats.totalReviews > 0
@@ -756,6 +810,7 @@ export default function Home() {
         </motion.div>
 
         <div className="lg:col-span-7 flex flex-col space-y-4 justify-center">
+          {/* Navegação de Tabs */}
           <div className="flex flex-wrap gap-3 mb-2">
             <button
               onMouseEnter={() => sfx.playHover()}
@@ -808,6 +863,7 @@ export default function Home() {
             </button>
           </div>
           <AnimatePresence>
+            {/* TAB 1: Form de Rating */}
             {activeTab === "rate" && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -921,6 +977,7 @@ export default function Home() {
               </motion.div>
             )}
 
+            {/* TAB 2: Comunidade */}
             {activeTab === "community" && (
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
@@ -965,7 +1022,7 @@ export default function Home() {
                             onClick={() => {
                               sfx.playClick();
                               setRatingFilter(
-                                ratingFilter === star ? null : star
+                                ratingFilter === star ? null : star,
                               );
                             }}
                             className={`flex items-center gap-0.5 px-2 py-0.5 font-mono text-[10px] font-bold transition-all cursor-pointer ${
@@ -1075,12 +1132,14 @@ export default function Home() {
                               </span>
                             </div>
                             <div className="flex text-persona-cyan">
-                              {Array.from({ length: rev.rating }).map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className="w-3.5 h-3.5 fill-persona-cyan"
-                                />
-                              ))}
+                              {Array.from({ length: rev.rating }).map(
+                                (_, i) => (
+                                  <Star
+                                    key={i}
+                                    className="w-3.5 h-3.5 fill-persona-cyan"
+                                  />
+                                ),
+                              )}
                             </div>
                           </div>
 
@@ -1156,6 +1215,7 @@ export default function Home() {
               </motion.div>
             )}
 
+            {/* TAB 3: Faixas do Álbum */}
             {activeTab === "tracks" && (
               <motion.div
                 key={selectedAlbum.id}
@@ -1185,8 +1245,8 @@ export default function Home() {
                         acc[disc].push(track);
                         return acc;
                       },
-                      {} as Record<number, Track[]>
-                    )
+                      {} as Record<number, Track[]>,
+                    ),
                   ).map(([discNumber, discTracks]) => (
                     <div key={`disc-${discNumber}`} className="space-y-2">
                       <div className="flex items-center gap-2 py-1 border-b-2 border-persona-cyan/60 -skew-x-6 bg-persona-blue/40 px-3 my-2">
@@ -1250,6 +1310,7 @@ export default function Home() {
         <span>TRACKLIST & AUTHENTICATION ACTIVE</span>
       </footer>
 
+      {/* Leitor de Áudio Neon Fixo */}
       <AudioPlayer
         currentTrack={currentTrack}
         isPlaying={isPlaying}
@@ -1266,11 +1327,13 @@ export default function Home() {
         onClose={handleStopAudio}
       />
 
+      {/* Modal de Autenticação */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
       />
 
+      {/* Sistema Flutuante de Toasts P3R */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </main>
   );
