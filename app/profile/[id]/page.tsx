@@ -17,6 +17,7 @@ import Link from 'next/link';
 import SfxToggle from '@/components/SfxToggle';
 import { sfx } from '@/lib/sfx';
 import ExpandableText from '@/components/ExpandableText';
+import ShareButton from '@/components/ShareButton';
 
 interface Review {
   id: string;
@@ -101,10 +102,6 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
   const favorites = profile.favorites || [];
 
   const totalReviews = userReviews.length;
-  const averageRating =
-    totalReviews > 0
-      ? (userReviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
-      : '0.0';
 
   const topAlbum =
     userReviews.length > 0
@@ -113,22 +110,25 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
   return (
     <main className="min-h-screen bg-persona-dark text-persona-white relative overflow-hidden p-6 md:p-12">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-persona-blue/20 blur-[140px] -z-10 rounded-full" />
-      <div className="absolute -bottom-20 -left-20 w-[600px] h-[600px] bg-persona-cyan/10 blur-[160px] -z-10 rounded-full" />
-
-      {/* Botões Superiores */}
-      <div className="flex justify-between items-center mb-6">
+      {/* Cabeçalho de Navegação e Partilha Corrigido */}
+      <div className="flex justify-between items-center border-b-2 border-persona-cyan/30 pb-4 mb-8">
         <Link
           href="/"
           onMouseEnter={() => sfx.playHover()}
           onClick={() => sfx.playClick()}
-          className="inline-flex items-center gap-2 bg-persona-blue/30 border border-persona-cyan/50 text-persona-cyan px-4 py-2 -skew-x-12 hover:bg-persona-cyan hover:text-persona-dark font-black italic text-xs uppercase transition-all"
+          className="flex items-center gap-2 bg-persona-blue/40 border border-persona-cyan px-4 py-1.5 -skew-x-12 text-xs font-mono text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark transition-all cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 skew-x-12" />
-          <span className="skew-x-12">VOLTAR À PÁGINA PRINCIPAL</span>
+          <span className="skew-x-12 font-bold uppercase">VOLTAR À HOMEPAGE</span>
         </Link>
 
-        <SfxToggle />
+        <div className="flex items-center gap-3">
+          <ShareButton
+            title={profile.name || 'Operativo'}
+            text={`Confere o perfil e as análises musicais do operativo ${profile.name || 'Operativo'} no Velvet Records!`}
+          />
+          <SfxToggle />
+        </div>
       </div>
 
       {/* Cabeçalho do Perfil Público */}
@@ -239,7 +239,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                       <p className="font-black italic text-sm text-persona-cyan uppercase truncate">{rev.albumTitle}</p>
                       <p className="text-xs font-mono text-persona-white/60 uppercase truncate">{rev.artistName}</p>
                       <div className="mt-1">
-                          <ExpandableText text={rev.comment} maxLength={120} />
+                        <ExpandableText text={rev.comment} maxLength={120} />
                       </div>
                     </div>
                   </div>

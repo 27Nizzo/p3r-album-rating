@@ -24,6 +24,7 @@ import { useRouter } from 'next/navigation';
 import SfxToggle from '@/components/SfxToggle';
 import { sfx } from '@/lib/sfx';
 import ExpandableText from '@/components/ExpandableText';
+import SocialStats from '@/components/SocialStats';
 
 interface Review {
   id: string;
@@ -174,7 +175,7 @@ export default function ProfilePage() {
     }
   };
 
-  // Estatísticas Rápidas
+  // Estatísticas Rápidas & Cálculo para os Social Stats
   const totalReviews = userReviews.length;
   const averageRating =
     totalReviews > 0
@@ -185,6 +186,12 @@ export default function ProfilePage() {
     userReviews.length > 0
       ? [...userReviews].sort((a, b) => b.rating - a.rating)[0]
       : null;
+
+  // Cálculo de estatísticas para o SocialStats P3R
+  const reviewsCount = userReviews.length;
+  const totalLikes = 0; // Podes ligar à contagem real de likes se a API devolver este dado
+  const compendiumCount = favorites.length;
+  const uniqueArtistsCount = new Set(userReviews.map((r) => r.artistName)).size;
 
   // Filtro e Ordenação
   const filteredReviews = userReviews
@@ -221,7 +228,6 @@ export default function ProfilePage() {
           <ArrowLeft className="w-4 h-4 skew-x-12" />
           <span className="skew-x-12">VOLTAR À PÁGINA PRINCIPAL</span>
         </Link>
-
         <SfxToggle />
       </div>
 
@@ -312,6 +318,16 @@ export default function ProfilePage() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Social Stats Estilo Persona 3 Reload */}
+      <div className="mb-8">
+        <SocialStats
+          reviewsCount={reviewsCount}
+          totalLikes={totalLikes}
+          compendiumCount={compendiumCount}
+          uniqueArtistsCount={uniqueArtistsCount}
+        />
       </div>
 
       {/* Painel de Estatísticas */}

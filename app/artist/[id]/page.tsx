@@ -35,6 +35,7 @@ interface Album {
   id: string;
   title: string;
   artist: string;
+  artistId?: string; 
   coverUrl: string;
   releaseYear: string;
 }
@@ -70,6 +71,7 @@ interface Review {
 export default function Home() {
   const { data: session } = useSession();
 
+  // Estado do Sistema de Toast P3R
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const showToast = (
@@ -92,6 +94,7 @@ export default function Home() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  // 1. Estados do Leitor de Áudio Neon
   const [currentTrack, setCurrentTrack] = useState<{
     id: string;
     name: string;
@@ -102,6 +105,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // 2. Outros Estados da Aplicação
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Album[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -129,9 +133,11 @@ export default function Home() {
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  // Estados do Compendium
   const [isFavorite, setIsFavorite] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
+  // Estados para filtros e Pesquisa na Comunidade
   const [communitySearch, setCommunitySearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
 
@@ -139,6 +145,7 @@ export default function Home() {
     "recent" | "popular" | "rating-desc" | "rating-asc"
   >("recent");
 
+  // Reviews filtradas para a Tab da Comunidade
   const filteredReviews = reviews
     .filter((rev) => {
       const matchesSearch =
@@ -168,6 +175,7 @@ export default function Home() {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
+  // Verificar se o álbum está no Compendium
   const checkIsFavorite = async () => {
     if (!session || !selectedAlbum.id || selectedAlbum.id === "default") {
       setIsFavorite(false);
@@ -191,6 +199,7 @@ export default function Home() {
     }
   };
 
+  // Adicionar / Remover do Compendium
   const toggleFavorite = async () => {
     if (!session) {
       sfx.playClick();
@@ -245,6 +254,7 @@ export default function Home() {
     }
   };
 
+  // Estatísticas do Álbum
   const [albumStats, setAlbumStats] = useState<{
     averageRating: number;
     totalReviews: number;
@@ -253,6 +263,7 @@ export default function Home() {
     totalReviews: 0,
   });
 
+  // Lógica de Reprodução de Áudio
   const handlePlayPreview = (track: Track) => {
     sfx.playClick();
     if (!track.previewUrl) return;
@@ -596,6 +607,7 @@ export default function Home() {
             </AnimatePresence>
           </div>
 
+          {/* Área de Autenticação + SFX Toggle */}
           <div className="flex items-center gap-3">
             <SfxToggle />
 
@@ -669,6 +681,7 @@ export default function Home() {
                   <Sparkles className="w-3.5 h-3.5" /> Spotlight Album
                 </div>
 
+                {/* BOTÃO VELVET COMPENDIUM */}
                 {selectedAlbum.id !== "default" && (
                   <button
                     onClick={toggleFavorite}
@@ -710,28 +723,26 @@ export default function Home() {
                   <Disc className="w-32 h-32 text-persona-cyan/40 animate-pulse" />
                 )}
               </div>
+              <h2 className="text-3xl font-black uppercase italic tracking-tight text-persona-white leading-tight">
+                {selectedAlbum.title}
+              </h2>
 
-              {/* TÍTULO DO ÁLBUM AGORA ABRE A PÁGINA DO ÁLBUM (/album/[id]) */}
-              {selectedAlbum.id !== "default" ? (
+              {/* LINK CORRIGIDO PARA O DOSSIÊ DO ARTISTA */}
+              {selectedAlbum.id !== "default" && selectedAlbum.artistId ? (
                 <Link
-                  href={`/album/${selectedAlbum.id}`}
+                  href={`/artist/${selectedAlbum.artistId}`}
                   onMouseEnter={() => sfx.playHover()}
                   onClick={() => sfx.playClick()}
-                  className="text-3xl font-black uppercase italic tracking-tight text-persona-white hover:text-persona-cyan transition-colors leading-tight block mb-1"
-                  title={`Ver detalhes do álbum ${selectedAlbum.title}`}
+                  className="text-persona-cyan font-bold tracking-widest uppercase text-base mb-2 inline-block hover:underline hover:text-white transition-colors cursor-pointer"
+                  title={`Ver dossiê de ${selectedAlbum.artist}`}
                 >
-                  {selectedAlbum.title} 
+                  {selectedAlbum.artist} →
                 </Link>
               ) : (
-                <h2 className="text-3xl font-black uppercase italic tracking-tight text-persona-white leading-tight mb-1">
-                  {selectedAlbum.title}
-                </h2>
+                <p className="text-persona-cyan font-bold tracking-widest uppercase text-base mb-2">
+                  {selectedAlbum.artist}
+                </p>
               )}
-
-              {/* ARTISTA É APENAS TEXTO */}
-              <p className="text-persona-cyan font-bold tracking-widest uppercase text-base mb-2">
-                {selectedAlbum.artist}
-              </p>
 
               <div className="flex items-center justify-between mt-4 text-xs font-mono text-persona-white/70 border-t border-persona-cyan/20 pt-3">
                 <div className="flex items-center gap-2">
@@ -756,6 +767,7 @@ export default function Home() {
         </motion.div>
 
         <div className="lg:col-span-7 flex flex-col space-y-4 justify-center">
+          {/* Navegação de Tabs */}
           <div className="flex flex-wrap gap-3 mb-2">
             <button
               onMouseEnter={() => sfx.playHover()}
@@ -808,6 +820,7 @@ export default function Home() {
             </button>
           </div>
           <AnimatePresence>
+            {/* TAB 1: Form de Rating */}
             {activeTab === "rate" && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -921,6 +934,7 @@ export default function Home() {
               </motion.div>
             )}
 
+            {/* TAB 2: Comunidade */}
             {activeTab === "community" && (
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
@@ -1156,6 +1170,7 @@ export default function Home() {
               </motion.div>
             )}
 
+            {/* TAB 3: Faixas do Álbum */}
             {activeTab === "tracks" && (
               <motion.div
                 key={selectedAlbum.id}
@@ -1250,6 +1265,7 @@ export default function Home() {
         <span>TRACKLIST & AUTHENTICATION ACTIVE</span>
       </footer>
 
+      {/* Leitor de Áudio Neon Fixo */}
       <AudioPlayer
         currentTrack={currentTrack}
         isPlaying={isPlaying}
@@ -1266,11 +1282,13 @@ export default function Home() {
         onClose={handleStopAudio}
       />
 
+      {/* Modal de Autenticação */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
       />
 
+      {/* Sistema Flutuante de Toasts P3R */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </main>
   );
