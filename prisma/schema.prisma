@@ -19,6 +19,7 @@ model User {
   reviews       Review[]
   favorites     Favorite[]
   likes         ReviewLike[]
+  comments      Comment[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime   @default(now()) @updatedAt
 }
@@ -83,6 +84,7 @@ model Review {
   rating      Int
   comment     String
   likes       ReviewLike[]
+  comments    Comment[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   userId      String?
@@ -99,4 +101,15 @@ model ReviewLike {
   updatedAt   DateTime @default(now()) @updatedAt
 
   @@unique([userId, reviewId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  reviewId  String
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 }
