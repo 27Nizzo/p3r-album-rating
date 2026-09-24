@@ -25,14 +25,14 @@ export const authOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email as string },
         });
 
         if (!user || !user.password) return null;
 
         const isValidPassword = await bcrypt.compare(
-          credentials.password, 
-          user.password
+          credentials.password as string, 
+          user.password as string
         );
         if (!isValidPassword) return null;
 
@@ -40,8 +40,8 @@ export const authOptions = {
       },
     }),
   ],
-  session: { strategy: 'jwt' },
+  session: { strategy: 'jwt' as const },
   secret: process.env.NEXTAUTH_SECRET,
 };
 
-export const { auth } = NextAuth(authOptions);
+export const { auth } = NextAuth(authOptions as any);
