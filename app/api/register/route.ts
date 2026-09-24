@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
-import { Resend } from "resend";
-
-// Inicializar o Resend com a chave de API
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   try {
@@ -35,48 +30,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Este email já está registado." }, { status: 400 });
     }
 
-    // 4. Criar utilizador
+    // 4. Criar utilizador já verificado e pronto a usar
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { name, email, password: hashedPassword },
-    });
-
-    // 5. Gerar Token de Verificação
-    const token = crypto.randomUUID();
-    await prisma.verificationToken.create({
-      data: {
-        identifier: email,
-        token,
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24 horas
+      data: { 
+        name, 
+        email, 
+        password: hashedPassword,
+        emailVerified: new Date(), // Conta ativada imediatamente
       },
     });
 
-    // 6. Construir o link de confirmação
-    const verificationLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/verify-email?token=${token}`;
-
-    // 7. Enviar o email real através do Resend
-    try {
-      await resend.emails.send({
-        from: 'Velvet System <onboarding@resend.dev>', // Em produção podes usar o teu próprio domínio verificado
-        to: email,
-        subject: 'Confirmação de Registo - Velvet',
-        html: `
-          <div style="font-family: Arial, sans-serif; background-color: #0b0f19; color: #ffffff; padding: 20px; border-radius: 8px;">
-            <h2 style="color: #00e5ff; text-transform: uppercase; font-style: italic;">Bem-vindo ao Velvet System, ${name}!</h2>
-            <p style="color: #cbd5e1; font-size: 14px;">Estás quase pronto para começar a gerir e avaliar os teus álbuns favoritos.</p>
-            <p style="color: #cbd5e1; font-size: 14px;">Clica no botão abaixo para verificar o teu email e ativar a tua conta:</p>
-            <a href="${verificationLink}" style="display: inline-block; background-color: #00e5ff; color: #0b0f19; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 4px; margin-top: 15px; text-transform: uppercase;">Verificar Conta</a>
-            <p style="color: #64748b; font-size: 11px; margin-top: 30px;">Se não pediste este registo, podes ignorar este email.</p>
-          </div>
-        `,
-      });
-    } catch (emailError) {
-      console.error("Erro ao enviar email pelo Resend:", emailError);
-      // Mesmo se falhar o email, o user foi criado, mas podes tratar o erro se preferires
-    }
-
     return NextResponse.json({ 
-      message: "Conta criada com sucesso! Verifica a tua caixa de correio." 
+      message: "Conta criada com sucesso!", 
+      userId: user.id 
     }, { status: 201 });
 
   } catch (error) {
