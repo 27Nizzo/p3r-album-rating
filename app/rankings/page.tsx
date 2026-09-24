@@ -210,12 +210,12 @@ export default function RankingsPage() {
                     href={`/profile/${op.id}`}
                     onMouseEnter={() => sfx.playHover()}
                     onClick={() => sfx.playClick()}
-                    className="bg-persona-dark/90 border border-persona-cyan/40 p-4 flex items-center justify-between gap-4 hover:border-persona-cyan transition-all group block cursor-pointer"
+                    className="bg-persona-dark/90 border border-persona-cyan/40 p-4 flex items-center justify-between gap-4 hover:border-persona-cyan transition-all group w-full cursor-pointer"
                   >
-                    <div className="flex items-center gap-4 min-w-0">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
                       {/* Posição no Ranking */}
                       <span
-                        className={`font-black italic text-xl w-8 text-center ${index === 0 ? "text-yellow-400" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-persona-cyan/50"}`}
+                        className={`font-black italic text-xl w-8 text-center shrink-0 ${index === 0 ? "text-yellow-400" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-persona-cyan/50"}`}
                       >
                         #{index + 1}
                       </span>
@@ -234,11 +234,12 @@ export default function RankingsPage() {
                       </div>
 
                       {/* Nome */}
-                      <p className="font-black italic text-base text-persona-white uppercase group-hover:text-persona-cyan transition-colors truncate">
+                      <p className="flex-1 min-w-0 font-black italic text-base text-persona-white uppercase group-hover:text-persona-cyan transition-colors truncate">
                         {op.name || "OPERATIVE"}
                       </p>
                     </div>
 
+                    {/* Badge */}
                     <div className="flex items-center gap-2 bg-persona-blue/40 border border-persona-cyan/40 px-3 py-1 -skew-x-12 shrink-0">
                       <Flame className="w-4 h-4 text-persona-cyan skew-x-12" />
                       <span className="font-mono text-xs font-bold text-persona-cyan skew-x-12">
@@ -272,12 +273,12 @@ export default function RankingsPage() {
                     href={`/album/${album.albumId}`}
                     onMouseEnter={() => sfx.playHover()}
                     onClick={() => sfx.playClick()}
-                    className="bg-persona-dark/90 border border-persona-cyan/40 p-4 flex items-center justify-between gap-4 hover:border-persona-cyan transition-all group cursor-pointer"
+                    className="bg-persona-dark/90 border border-persona-cyan/40 p-4 flex items-center justify-between gap-4 hover:border-persona-cyan transition-all group w-full cursor-pointer"
                   >
-                    <div className="flex items-center gap-4 min-w-0">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
                       {/* Posição no Ranking */}
                       <span
-                        className={`font-black italic text-xl w-8 text-center ${index === 0 ? "text-yellow-400" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-persona-cyan/50"}`}
+                        className={`font-black italic text-xl w-8 text-center shrink-0 ${index === 0 ? "text-yellow-400" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-persona-cyan/50"}`}
                       >
                         #{index + 1}
                       </span>
