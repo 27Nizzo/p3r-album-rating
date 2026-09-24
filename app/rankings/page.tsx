@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   Trophy,
   Star,
@@ -12,10 +12,10 @@ import {
   Loader2,
   Sparkles,
   Disc,
-} from 'lucide-react';
-import Link from 'next/link';
-import SfxToggle from '@/components/SfxToggle';
-import { sfx } from '@/lib/sfx';
+} from "lucide-react";
+import Link from "next/link";
+import SfxToggle from "@/components/SfxToggle";
+import { sfx } from "@/lib/sfx";
 
 interface RankedAlbum {
   albumId: string;
@@ -42,13 +42,15 @@ export default function RankingsPage() {
   const [topOperatives, setTopOperatives] = useState<RankedOperative[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [activeCategory, setActiveCategory] = useState<'rated' | 'popular' | 'compendium' | 'operatives'>('rated');
+  const [activeCategory, setActiveCategory] = useState<
+    "rated" | "popular" | "compendium" | "operatives"
+  >("rated");
 
   useEffect(() => {
     const fetchRankings = async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/rankings');
+        const res = await fetch("/api/rankings");
         if (!res.ok) return;
 
         const data = await res.json();
@@ -57,7 +59,7 @@ export default function RankingsPage() {
         setMostSaved(data.mostSaved || []);
         setTopOperatives(data.topOperatives || []);
       } catch (err) {
-        console.error('Erro ao carregar rankings:', err);
+        console.error("Erro ao carregar rankings:", err);
       } finally {
         setLoading(false);
       }
@@ -118,11 +120,14 @@ export default function RankingsPage() {
         <div className="flex flex-wrap gap-3">
           <button
             onMouseEnter={() => sfx.playHover()}
-            onClick={() => { sfx.playClick(); setActiveCategory('rated'); }}
+            onClick={() => {
+              sfx.playClick();
+              setActiveCategory("rated");
+            }}
             className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
-              activeCategory === 'rated'
-                ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]'
-                : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'
+              activeCategory === "rated"
+                ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
+                : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
             }`}
           >
             <Star className="w-4 h-4 skew-x-12" />
@@ -131,41 +136,56 @@ export default function RankingsPage() {
 
           <button
             onMouseEnter={() => sfx.playHover()}
-            onClick={() => { sfx.playClick(); setActiveCategory('popular'); }}
+            onClick={() => {
+              sfx.playClick();
+              setActiveCategory("popular");
+            }}
             className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
-              activeCategory === 'popular'
-                ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]'
-                : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'
+              activeCategory === "popular"
+                ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
+                : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
             }`}
           >
             <Flame className="w-4 h-4 skew-x-12" />
-            <span className="skew-x-12">MAIS POPULARES ({mostReviewed.length})</span>
+            <span className="skew-x-12">
+              MAIS POPULARES ({mostReviewed.length})
+            </span>
           </button>
 
           <button
             onMouseEnter={() => sfx.playHover()}
-            onClick={() => { sfx.playClick(); setActiveCategory('compendium'); }}
+            onClick={() => {
+              sfx.playClick();
+              setActiveCategory("compendium");
+            }}
             className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
-              activeCategory === 'compendium'
-                ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]'
-                : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'
+              activeCategory === "compendium"
+                ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
+                : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
             }`}
           >
             <BookmarkCheck className="w-4 h-4 skew-x-12" />
-            <span className="skew-x-12">MOST SAVED IN COMPENDIUM ({mostSaved.length})</span>
+            <span className="skew-x-12">
+              MOST SAVED IN COMPENDIUM ({mostSaved.length})
+            </span>
           </button>
 
           <button
             onMouseEnter={() => sfx.playHover()}
-            onClick={() => { sfx.playClick(); setActiveCategory('operatives'); }}
+            onClick={() => {
+              sfx.playClick();
+              setActiveCategory("operatives");
+            }}
             className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
-              activeCategory === 'operatives'
-                ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]'
-                : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'
+              activeCategory === "operatives"
+                ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
+                : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
             }`}
           >
             <User className="w-4 h-4 skew-x-12" />
-            <span className="skew-x-12">TOP OPERATIVOS ({topOperatives.length})</span>
+            <span className="skew-x-12">
+              TOP OPERATIVOS ({topOperatives.length})
+            </span>
           </button>
         </div>
 
@@ -177,7 +197,7 @@ export default function RankingsPage() {
           className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-6 -skew-x-3 space-y-3"
         >
           <div className="skew-x-3 space-y-3">
-            {activeCategory === 'operatives' ? (
+            {activeCategory === "operatives" ? (
               // Tabela de Operativos
               topOperatives.length === 0 ? (
                 <p className="font-mono text-xs text-persona-cyan/60 uppercase py-8 text-center">
@@ -194,14 +214,20 @@ export default function RankingsPage() {
                   >
                     <div className="flex items-center gap-4 min-w-0">
                       {/* Posição no Ranking */}
-                      <span className={`font-black italic text-xl w-8 text-center ${index === 0 ? 'text-yellow-400' : index === 1 ? 'text-slate-300' : index === 2 ? 'text-amber-600' : 'text-persona-cyan/50'}`}>
+                      <span
+                        className={`font-black italic text-xl w-8 text-center ${index === 0 ? "text-yellow-400" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-persona-cyan/50"}`}
+                      >
                         #{index + 1}
                       </span>
 
                       {/* Avatar */}
                       <div className="w-12 h-12 border border-persona-cyan bg-persona-blue/40 rounded-full overflow-hidden flex items-center justify-center shrink-0">
                         {op.image ? (
-                          <img src={op.image} alt="Avatar" className="w-full h-full object-cover" />
+                          <img
+                            src={op.image}
+                            alt="Avatar"
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <User className="w-6 h-6 text-persona-cyan" />
                         )}
@@ -209,7 +235,7 @@ export default function RankingsPage() {
 
                       {/* Nome */}
                       <p className="font-black italic text-base text-persona-white uppercase group-hover:text-persona-cyan transition-colors truncate">
-                        {op.name || 'OPERATIVE'}
+                        {op.name || "OPERATIVE"}
                       </p>
                     </div>
 
@@ -226,11 +252,11 @@ export default function RankingsPage() {
               // Tabela de Álbuns (Rated, Popular, Compendium)
               (() => {
                 const list =
-                  activeCategory === 'rated'
+                  activeCategory === "rated"
                     ? topRated
-                    : activeCategory === 'popular'
-                    ? mostReviewed
-                    : mostSaved;
+                    : activeCategory === "popular"
+                      ? mostReviewed
+                      : mostSaved;
 
                 if (list.length === 0) {
                   return (
@@ -250,7 +276,9 @@ export default function RankingsPage() {
                   >
                     <div className="flex items-center gap-4 min-w-0">
                       {/* Posição no Ranking */}
-                      <span className={`font-black italic text-xl w-8 text-center ${index === 0 ? 'text-yellow-400' : index === 1 ? 'text-slate-300' : index === 2 ? 'text-amber-600' : 'text-persona-cyan/50'}`}>
+                      <span
+                        className={`font-black italic text-xl w-8 text-center ${index === 0 ? "text-yellow-400" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-persona-cyan/50"}`}
+                      >
                         #{index + 1}
                       </span>
 
@@ -268,7 +296,7 @@ export default function RankingsPage() {
                       )}
 
                       {/* Detalhes do Álbum */}
-                      <div className="min-w-0">
+                      <div className="flex-1 min-w-0">
                         <p className="font-black italic text-base text-persona-cyan uppercase group-hover:underline truncate">
                           {album.albumTitle}
                         </p>
@@ -280,7 +308,7 @@ export default function RankingsPage() {
 
                     {/* Métrica / Badge */}
                     <div className="flex items-center gap-3 shrink-0">
-                      {activeCategory === 'rated' && (
+                      {activeCategory === "rated" && (
                         <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-3 py-1.5 -skew-x-12">
                           <Star className="w-4 h-4 text-persona-cyan fill-persona-cyan skew-x-12" />
                           <span className="font-mono text-sm font-bold text-persona-cyan skew-x-12">
@@ -292,7 +320,7 @@ export default function RankingsPage() {
                         </div>
                       )}
 
-                      {activeCategory === 'popular' && (
+                      {activeCategory === "popular" && (
                         <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-3 py-1.5 -skew-x-12">
                           <Flame className="w-4 h-4 text-persona-cyan skew-x-12" />
                           <span className="font-mono text-sm font-bold text-persona-cyan skew-x-12">
@@ -301,7 +329,7 @@ export default function RankingsPage() {
                         </div>
                       )}
 
-                      {activeCategory === 'compendium' && (
+                      {activeCategory === "compendium" && (
                         <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-3 py-1.5 -skew-x-12">
                           <BookmarkCheck className="w-4 h-4 text-persona-cyan skew-x-12" />
                           <span className="font-mono text-sm font-bold text-persona-cyan skew-x-12">
