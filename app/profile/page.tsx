@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   User,
   Star,
@@ -17,15 +17,16 @@ import {
   X,
   BookmarkCheck,
   Disc,
-} from 'lucide-react';
-import { useSession } from 'next-auth/react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import SfxToggle from '@/components/SfxToggle';
-import { sfx } from '@/lib/sfx';
-import ExpandableText from '@/components/ExpandableText';
-import SocialStats from '@/components/SocialStats';
-import { userAgent } from 'next/server';
+  Camera,
+} from "lucide-react";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import SfxToggle from "@/components/SfxToggle";
+import { sfx } from "@/lib/sfx";
+import ExpandableText from "@/components/ExpandableText";
+import SocialStats from "@/components/SocialStats";
+import { userAgent } from "next/server";
 
 interface Review {
   id: string;
@@ -56,56 +57,85 @@ export default function ProfilePage() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deletingFavAlbumId, setDeletingFavAlbumId] = useState<string | null>(null);
+  const [deletingFavAlbumId, setDeletingFavAlbumId] = useState<string | null>(
+    null,
+  );
 
   // Estados de Edição do Perfil
   const [isEditing, setIsEditing] = useState(false);
-  const [newName, setNewName] = useState('');
-  const [newImage, setNewImage] = useState('');
+  const [newName, setNewName] = useState("");
+  const [newImage, setNewImage] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Função para lidar com a seleção do ficheiro local
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      sfx.playClick();
+      alert("Por favor, seleciona um ficheiro de imagem válido.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (reader.result) {
+        setNewImage(reader.result as string);
+        sfx.playSuccess();
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Estados de Filtro, Ordenação e Abas do Perfil
-  const [activeTab, setActiveTab] = useState<'reviews' | 'compendium' | 'stats'>('reviews');
-  const [filterRating, setFilterRating] = useState<number | 'all'>('all');
-  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest');
+  const [activeTab, setActiveTab] = useState<
+    "reviews" | "compendium" | "stats"
+  >("reviews");
+  const [filterRating, setFilterRating] = useState<number | "all">("all");
+  const [sortBy, setSortBy] = useState<
+    "newest" | "oldest" | "highest" | "lowest"
+  >("newest");
 
   const fetchUserData = async () => {
     try {
       setLoading(true);
 
       // 1. Críticas do Utilizador
-      const resReviews = await fetch('/api/reviews/user');
+      const resReviews = await fetch("/api/reviews/user");
       if (resReviews.ok) {
         const textRev = await resReviews.text();
-        if (textRev && !textRev.trim().startsWith('<')) {
+        if (textRev && !textRev.trim().startsWith("<")) {
           const dataRev = JSON.parse(textRev);
           if (dataRev.reviews) setUserReviews(dataRev.reviews);
         }
       }
 
       // 2. Velvet Compendium (Favoritos)
-      const resFavs = await fetch('/api/favorites');
+      const resFavs = await fetch("/api/favorites");
       if (resFavs.ok) {
         const textFav = await resFavs.text();
-        if (textFav && !textFav.trim().startsWith('<')) {
+        if (textFav && !textFav.trim().startsWith("<")) {
           const dataFav = JSON.parse(textFav);
           if (dataFav.favorites) setFavorites(dataFav.favorites);
         }
       }
     } catch (err) {
-      console.error('Erro ao carregar dados do perfil:', err);
+      console.error("Erro ao carregar dados do perfil:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/');
-    } else if (status === 'authenticated') {
+    if (status === "unauthenticated") {
+      router.push("/");
+    } else if (status === "authenticated") {
       fetchUserData();
-      setNewName(session?.user?.name || '');
-      setNewImage(session?.user?.image || '');
+      setNewName(session?.user?.name || "");
+      setNewImage(session?.user?.image || "");
     }
   }, [status, router, session]);
 
@@ -113,9 +143,9 @@ export default function ProfilePage() {
     sfx.playClick();
     try {
       setDeletingId(id);
-      const res = await fetch('/api/reviews/user', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/reviews/user", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
 
@@ -123,7 +153,7 @@ export default function ProfilePage() {
         setUserReviews((prev) => prev.filter((r) => r.id !== id));
       }
     } catch (err) {
-      console.error('Erro ao apagar:', err);
+      console.error("Erro ao apagar:", err);
     } finally {
       setDeletingId(null);
     }
@@ -134,14 +164,14 @@ export default function ProfilePage() {
     try {
       setDeletingFavAlbumId(albumId);
       const res = await fetch(`/api/favorites?albumId=${albumId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (res.ok) {
         setFavorites((prev) => prev.filter((f) => f.albumId !== albumId));
       }
     } catch (err) {
-      console.error('Erro ao remover do compendium:', err);
+      console.error("Erro ao remover do compendium:", err);
     } finally {
       setDeletingFavAlbumId(null);
     }
@@ -155,9 +185,9 @@ export default function ProfilePage() {
     try {
       setIsSavingProfile(true);
 
-      const res = await fetch('/api/user/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName, image: newImage }),
       });
 
@@ -168,10 +198,10 @@ export default function ProfilePage() {
         setIsEditing(false);
       } else {
         const errorData = await res.json();
-        console.error('Erro retornado pela API:', errorData);
+        console.error("Erro retornado pela API:", errorData);
       }
     } catch (err) {
-      console.error('Erro ao guardar perfil:', err);
+      console.error("Erro ao guardar perfil:", err);
     } finally {
       setIsSavingProfile(false);
     }
@@ -187,22 +217,33 @@ export default function ProfilePage() {
 
   // Métricas calculadas para os Social Stats
   const reviewsCount = userReviews.length;
-  const totalLikes = userReviews.reduce((acc, rev) => acc + (rev.likesCount || 0), 0);
+  const totalLikes = userReviews.reduce(
+    (acc, rev) => acc + (rev.likesCount || 0),
+    0,
+  );
   const compendiumCount = favorites.length;
   const uniqueArtistsCount = new Set(userReviews.map((r) => r.artistName)).size;
 
   // Filtro e Ordenação
   const filteredReviews = userReviews
-    .filter((rev) => (filterRating === 'all' ? true : rev.rating === filterRating))
+    .filter((rev) =>
+      filterRating === "all" ? true : rev.rating === filterRating,
+    )
     .sort((a, b) => {
-      if (sortBy === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (sortBy === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      if (sortBy === 'highest') return b.rating - a.rating;
-      if (sortBy === 'lowest') return a.rating - b.rating;
+      if (sortBy === "newest")
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      if (sortBy === "oldest")
+        return (
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      if (sortBy === "highest") return b.rating - a.rating;
+      if (sortBy === "lowest") return a.rating - b.rating;
       return 0;
     });
 
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
       <div className="min-h-screen bg-persona-dark flex items-center justify-center">
         <Loader2 className="w-10 h-10 text-persona-cyan animate-spin" />
@@ -233,11 +274,49 @@ export default function ProfilePage() {
       <div className="bg-persona-dark/90 border-2 border-persona-cyan p-6 -skew-x-3 mb-8 shadow-[0_0_30px_rgba(0,229,255,0.2)]">
         <div className="skew-x-3 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6 w-full">
-            <div className="w-20 h-20 border-2 border-persona-cyan bg-persona-blue/40 flex items-center justify-center overflow-hidden shrink-0 shadow-[0_0_15px_rgba(0,229,255,0.4)] relative">
-              {session?.user?.image ? (
-                <img src={session.user.image} alt="User" className="w-full h-full object-cover" />
+            {/* Input de ficheiro oculto */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
+
+            {/* Avatar com suporte a clique para upload se estiver a editar */}
+            <div
+              onClick={() => {
+                if (isEditing && fileInputRef.current) {
+                  sfx.playClick();
+                  fileInputRef.current.click();
+                }
+              }}
+              className={`w-20 h-20 border-2 border-persona-cyan bg-persona-blue/40 flex items-center justify-center overflow-hidden shrink-0 shadow-[0_0_15px_rgba(0,229,255,0.4)] relative group ${
+                isEditing
+                  ? "cursor-pointer hover:border-white transition-all"
+                  : ""
+              }`}
+              title={
+                isEditing ? "Clica para escolher uma foto dos ficheiros" : ""
+              }
+            >
+              {(isEditing ? newImage : session?.user?.image) ? (
+                <img
+                  src={isEditing ? newImage : session?.user?.image || ""}
+                  alt="User"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <User className="w-10 h-10 text-persona-cyan" />
+              )}
+
+              {/* Overlay visual ao passar o rato se estiver a editar */}
+              {isEditing && (
+                <div className="absolute inset-0 bg-persona-dark/70 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-persona-cyan">
+                  <span className="text-[9px] font-mono font-bold uppercase text-center px-1">
+                    ALTERAR FOTO
+                  </span>
+                </div>
               )}
             </div>
 
@@ -249,14 +328,17 @@ export default function ProfilePage() {
               {!isEditing ? (
                 <div>
                   <h1 className="text-3xl font-black italic uppercase text-white tracking-wider">
-                    {session?.user?.name || 'Membro do Velvet'}
+                    {session?.user?.name || "Membro do Velvet"}
                   </h1>
                   <p className="font-mono text-xs text-persona-cyan/80 mt-1">
                     {session?.user?.email}
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSaveProfile} className="space-y-3 mt-1 max-w-md">
+                <form
+                  onSubmit={handleSaveProfile}
+                  className="space-y-3 mt-1 max-w-md"
+                >
                   <div>
                     <label className="block text-[10px] font-mono text-persona-cyan uppercase mb-1">
                       CODENAME / NOME
@@ -269,18 +351,6 @@ export default function ProfilePage() {
                       placeholder="NOVO NOME..."
                     />
                   </div>
-                  <div>
-                    <label className="block text-[10px] font-mono text-persona-cyan uppercase mb-1">
-                      URL DO AVATAR (OPCIONAL)
-                    </label>
-                    <input
-                      type="text"
-                      value={newImage}
-                      onChange={(e) => setNewImage(e.target.value)}
-                      className="w-full bg-persona-dark border border-persona-cyan px-3 py-1.5 text-xs font-mono text-white focus:outline-none"
-                      placeholder="HTTPS://..."
-                    />
-                  </div>
                   <div className="flex gap-2 pt-1">
                     <button
                       type="submit"
@@ -288,13 +358,20 @@ export default function ProfilePage() {
                       onMouseEnter={() => sfx.playHover()}
                       className="bg-persona-cyan text-persona-dark font-black px-3 py-1 text-xs uppercase italic flex items-center gap-1 hover:bg-white transition-all cursor-pointer"
                     >
-                      {isSavingProfile ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                      {isSavingProfile ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5" />
+                      )}
                       GUARDAR
                     </button>
                     <button
                       type="button"
                       onMouseEnter={() => sfx.playHover()}
-                      onClick={() => { sfx.playClick(); setIsEditing(false); }}
+                      onClick={() => {
+                        sfx.playClick();
+                        setIsEditing(false);
+                      }}
                       className="bg-persona-blue/40 border border-persona-cyan/50 text-persona-cyan font-bold px-3 py-1 text-xs uppercase flex items-center gap-1 hover:bg-persona-cyan/20 transition-all cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" /> CANCELAR
@@ -308,7 +385,10 @@ export default function ProfilePage() {
           {!isEditing && (
             <button
               onMouseEnter={() => sfx.playHover()}
-              onClick={() => { sfx.playClick(); setIsEditing(true); }}
+              onClick={() => {
+                sfx.playClick();
+                setIsEditing(true);
+              }}
               className="bg-persona-blue/40 border border-persona-cyan text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark px-3 py-1.5 -skew-x-12 font-black italic text-xs uppercase transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
             >
               <Edit3 className="w-3.5 h-3.5 skew-x-12" />
@@ -325,8 +405,12 @@ export default function ProfilePage() {
             <BarChart3 className="w-6 h-6 text-persona-cyan" />
           </div>
           <div className="skew-x-6">
-            <span className="text-[10px] font-mono text-persona-cyan/70 uppercase block">TOTAL REVIEWS</span>
-            <span className="text-2xl font-black italic text-white">{totalReviews}</span>
+            <span className="text-[10px] font-mono text-persona-cyan/70 uppercase block">
+              TOTAL REVIEWS
+            </span>
+            <span className="text-2xl font-black italic text-white">
+              {totalReviews}
+            </span>
           </div>
         </div>
 
@@ -335,8 +419,12 @@ export default function ProfilePage() {
             <BookmarkCheck className="w-6 h-6 text-persona-cyan" />
           </div>
           <div className="skew-x-6">
-            <span className="text-[10px] font-mono text-persona-cyan/70 uppercase block">COMPENDIUM</span>
-            <span className="text-2xl font-black italic text-white">{favorites.length} ÁLBUNS</span>
+            <span className="text-[10px] font-mono text-persona-cyan/70 uppercase block">
+              COMPENDIUM
+            </span>
+            <span className="text-2xl font-black italic text-white">
+              {favorites.length} ÁLBUNS
+            </span>
           </div>
         </div>
 
@@ -345,12 +433,16 @@ export default function ProfilePage() {
             <Award className="w-6 h-6 text-persona-cyan" />
           </div>
           <div className="skew-x-6 min-w-0">
-            <span className="text-[10px] font-mono text-persona-cyan/70 uppercase block">FAVORITO</span>
+            <span className="text-[10px] font-mono text-persona-cyan/70 uppercase block">
+              FAVORITO
+            </span>
             <span className="text-sm font-black italic text-white truncate block">
-              {topAlbum ? topAlbum.albumTitle : 'NENHUM'}
+              {topAlbum ? topAlbum.albumTitle : "NENHUM"}
             </span>
             {topAlbum && (
-              <span className="text-[10px] font-mono text-persona-cyan">{topAlbum.rating} ⭐</span>
+              <span className="text-[10px] font-mono text-persona-cyan">
+                {topAlbum.rating} ⭐
+              </span>
             )}
           </div>
         </div>
@@ -360,37 +452,50 @@ export default function ProfilePage() {
       <div className="flex flex-wrap gap-3 mb-4">
         <button
           onMouseEnter={() => sfx.playHover()}
-          onClick={() => { sfx.playClick(); setActiveTab('reviews'); }}
+          onClick={() => {
+            sfx.playClick();
+            setActiveTab("reviews");
+          }}
           className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
-            activeTab === 'reviews'
-              ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]'
-              : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'
+            activeTab === "reviews"
+              ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
+              : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
           }`}
         >
           <Flame className="w-4 h-4 skew-x-12" />
-          <span className="skew-x-12">01 // REVIEWS ({userReviews.length})</span>
+          <span className="skew-x-12">
+            01 // REVIEWS ({userReviews.length})
+          </span>
         </button>
 
         <button
           onMouseEnter={() => sfx.playHover()}
-          onClick={() => { sfx.playClick(); setActiveTab('compendium'); }}
+          onClick={() => {
+            sfx.playClick();
+            setActiveTab("compendium");
+          }}
           className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
-            activeTab === 'compendium'
-              ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]'
-              : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'
+            activeTab === "compendium"
+              ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
+              : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
           }`}
         >
           <BookmarkCheck className="w-4 h-4 skew-x-12" />
-          <span className="skew-x-12">02 // COMPENDIUM ({favorites.length})</span>
+          <span className="skew-x-12">
+            02 // COMPENDIUM ({favorites.length})
+          </span>
         </button>
 
         <button
           onMouseEnter={() => sfx.playHover()}
-          onClick={() => { sfx.playClick(); setActiveTab('stats'); }}
+          onClick={() => {
+            sfx.playClick();
+            setActiveTab("stats");
+          }}
           className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
-            activeTab === 'stats'
-              ? 'bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]'
-              : 'bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan'
+            activeTab === "stats"
+              ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
+              : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
           }`}
         >
           <Sparkles className="w-4 h-4 skew-x-12" />
@@ -399,42 +504,74 @@ export default function ProfilePage() {
       </div>
 
       {/* ABA 1: HISTÓRICO DE REVIEWS */}
-      {activeTab === 'reviews' && (
+      {activeTab === "reviews" && (
         <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-6 -skew-x-3">
           <div className="skew-x-3 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-persona-cyan/20">
             <h2 className="text-xl font-black italic uppercase text-persona-cyan flex items-center gap-2">
-              <Flame className="w-5 h-5" /> HISTÓRICO DE REVIEWS ({filteredReviews.length})
+              <Flame className="w-5 h-5" /> HISTÓRICO DE REVIEWS (
+              {filteredReviews.length})
             </h2>
 
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               <div className="flex items-center gap-1.5 bg-persona-dark border border-persona-cyan/50 px-2.5 py-1 text-xs font-mono">
                 <Filter className="w-3.5 h-3.5 text-persona-cyan" />
-                <span className="text-persona-cyan/60 uppercase text-[10px]">RATING:</span>
+                <span className="text-persona-cyan/60 uppercase text-[10px]">
+                  RATING:
+                </span>
                 <select
                   value={filterRating}
-                  onChange={(e) => setFilterRating(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                  onChange={(e) =>
+                    setFilterRating(
+                      e.target.value === "all" ? "all" : Number(e.target.value),
+                    )
+                  }
                   className="bg-transparent text-white focus:outline-none uppercase font-bold cursor-pointer"
                 >
-                  <option value="all" className="bg-persona-dark text-white">TODOS</option>
-                  <option value="5" className="bg-persona-dark text-white">5 Estrelas</option>
-                  <option value="4" className="bg-persona-dark text-white">4 Estrelas</option>
-                  <option value="3" className="bg-persona-dark text-white">3 Estrelas</option>
-                  <option value="2" className="bg-persona-dark text-white">2 Estrelas</option>
-                  <option value="1" className="bg-persona-dark text-white">1 Estrela</option>
+                  <option value="all" className="bg-persona-dark text-white">
+                    TODOS
+                  </option>
+                  <option value="5" className="bg-persona-dark text-white">
+                    5 Estrelas
+                  </option>
+                  <option value="4" className="bg-persona-dark text-white">
+                    4 Estrelas
+                  </option>
+                  <option value="3" className="bg-persona-dark text-white">
+                    3 Estrelas
+                  </option>
+                  <option value="2" className="bg-persona-dark text-white">
+                    2 Estrelas
+                  </option>
+                  <option value="1" className="bg-persona-dark text-white">
+                    1 Estrela
+                  </option>
                 </select>
               </div>
 
               <div className="flex items-center gap-1.5 bg-persona-dark border border-persona-cyan/50 px-2.5 py-1 text-xs font-mono">
-                <span className="text-persona-cyan/60 uppercase text-[10px]">ORDEM:</span>
+                <span className="text-persona-cyan/60 uppercase text-[10px]">
+                  ORDEM:
+                </span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
                   className="bg-transparent text-white focus:outline-none uppercase font-bold cursor-pointer"
                 >
-                  <option value="newest" className="bg-persona-dark text-white">Mais Recentes</option>
-                  <option value="oldest" className="bg-persona-dark text-white">Mais Antigas</option>
-                  <option value="highest" className="bg-persona-dark text-white">Maior Rating</option>
-                  <option value="lowest" className="bg-persona-dark text-white">Menor Rating</option>
+                  <option value="newest" className="bg-persona-dark text-white">
+                    Mais Recentes
+                  </option>
+                  <option value="oldest" className="bg-persona-dark text-white">
+                    Mais Antigas
+                  </option>
+                  <option
+                    value="highest"
+                    className="bg-persona-dark text-white"
+                  >
+                    Maior Rating
+                  </option>
+                  <option value="lowest" className="bg-persona-dark text-white">
+                    Menor Rating
+                  </option>
                 </select>
               </div>
             </div>
@@ -510,11 +647,12 @@ export default function ProfilePage() {
       )}
 
       {/* ABA 2: VELVET COMPENDIUM */}
-      {activeTab === 'compendium' && (
+      {activeTab === "compendium" && (
         <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-6 -skew-x-3">
           <div className="skew-x-3 flex justify-between items-center mb-6 pb-4 border-b border-persona-cyan/20">
             <h2 className="text-xl font-black italic uppercase text-persona-cyan flex items-center gap-2">
-              <BookmarkCheck className="w-5 h-5" /> VELVET COMPENDIUM ({favorites.length})
+              <BookmarkCheck className="w-5 h-5" /> VELVET COMPENDIUM (
+              {favorites.length})
             </h2>
           </div>
 
@@ -529,7 +667,8 @@ export default function ProfilePage() {
             ) : favorites.length === 0 ? (
               <div className="bg-persona-dark/60 border border-persona-cyan/30 p-8 text-center">
                 <p className="font-mono text-xs text-persona-cyan/60 uppercase">
-                  NENHUM ÁLBUM REGISTADO NO VELVET COMPENDIUM. ADICIONA ÁLBUNS A PARTIR DA PÁGINA PRINCIPAL!
+                  NENHUM ÁLBUM REGISTADO NO VELVET COMPENDIUM. ADICIONA ÁLBUNS A
+                  PARTIR DA PÁGINA PRINCIPAL!
                 </p>
               </div>
             ) : (
@@ -543,7 +682,11 @@ export default function ProfilePage() {
                     <div>
                       <div className="w-full aspect-square bg-persona-blue/40 border border-persona-cyan/50 mb-3 overflow-hidden flex items-center justify-center relative">
                         {fav.coverUrl ? (
-                          <img src={fav.coverUrl} alt={fav.albumTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <img
+                            src={fav.coverUrl}
+                            alt={fav.albumTitle}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
                         ) : (
                           <Disc className="w-12 h-12 text-persona-cyan/40" />
                         )}
@@ -584,7 +727,7 @@ export default function ProfilePage() {
       )}
 
       {/* ABA 3: VELVET STATS */}
-      {activeTab === 'stats' && (
+      {activeTab === "stats" && (
         <SocialStats
           reviewsCount={reviewsCount}
           totalLikes={totalLikes}
