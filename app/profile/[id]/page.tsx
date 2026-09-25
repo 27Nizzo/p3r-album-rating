@@ -266,19 +266,25 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                 O COMPENDIUM DESTE OPERATIVO ESTÁ VAZIO.
               </p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 w-full">
                 {favorites.map((fav) => (
-                  <div key={fav.id} className="bg-persona-dark/90 border border-persona-cyan/40 p-3 md:p-4 flex flex-col justify-between">
-                    <div>
-                      <div className="w-full aspect-square bg-persona-blue/40 border border-persona-cyan/50 mb-3 overflow-hidden flex items-center justify-center">
+                  <div key={fav.id} className="bg-persona-dark/90 border border-persona-cyan/40 p-2 md:p-3 flex flex-col justify-between w-full overflow-hidden">
+                    <div className="w-full">
+                      <div className="relative w-full aspect-square bg-persona-blue/40 border border-persona-cyan/50 mb-2 overflow-hidden flex items-center justify-center shrink-0">
                         {fav.coverUrl ? (
-                          <img src={fav.coverUrl} alt={fav.albumTitle} className="w-full h-full object-cover" />
+                          <img 
+                            src={fav.coverUrl} 
+                            alt={fav.albumTitle} 
+                            className="absolute inset-0 w-full h-full object-cover" 
+                          />
                         ) : (
-                          <Disc className="w-10 h-10 md:w-12 md:h-12 text-persona-cyan/40" />
+                          <Disc className="w-8 h-8 md:w-10 md:h-10 text-persona-cyan/40" />
                         )}
                       </div>
-                      <h3 className="font-black italic text-xs md:text-sm text-persona-cyan uppercase truncate">{fav.albumTitle}</h3>
-                      <p className="text-[10px] md:text-xs font-mono text-persona-white/60 uppercase truncate">{fav.artistName} ({fav.releaseYear})</p>
+                      <div className="min-w-0 w-full">
+                        <h3 className="font-black italic text-[11px] md:text-sm text-persona-cyan uppercase truncate">{fav.albumTitle}</h3>
+                        <p className="text-[9px] md:text-xs font-mono text-persona-white/60 uppercase truncate">{fav.artistName} ({fav.releaseYear})</p>
+                      </div>
                     </div>
                   </div>
                 ))}

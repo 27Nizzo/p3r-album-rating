@@ -493,7 +493,6 @@ export default function ProfilePage() {
       )}
 
       {/* ABA 2: VELVET COMPENDIUM */}
-{/* ABA 2: VELVET COMPENDIUM */}
       {activeTab === "compendium" && (
         <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6 -skew-x-3">
           <div className="skew-x-3 flex justify-between items-center mb-6 pb-4 border-b border-persona-cyan/20">
@@ -551,6 +550,7 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+
       {/* ABA 3: STATS */}
       {activeTab === "stats" && (
         <SocialStats
