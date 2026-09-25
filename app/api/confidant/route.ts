@@ -21,7 +21,6 @@ export async function GET(req: Request) {
       return NextResponse.json({ connection: null }, { status: 200 });
     }
 
-    // Se houver targetUserId, procura a relação bilateral
     if (targetUserId) {
       const connection = await prisma.userConnection.findFirst({
         where: {
@@ -38,7 +37,6 @@ export async function GET(req: Request) {
       );
     }
 
-    // Listar todos os Confidants do currentUser (com status ACCEPTED)
     const confidants = await prisma.userConnection.findMany({
       where: {
         status: 'ACCEPTED',
@@ -53,10 +51,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ confidants }, { status: 200 });
   } catch (error: any) {
     console.error('Erro ao buscar ligação de Confidant:', error);
-    return NextResponse.json(
-      { error: error?.message || 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error?.message || 'Erro interno do servidor' }, { status: 500 });
   }
 }
 
@@ -104,7 +99,7 @@ export async function POST(req: Request) {
           userId: targetUserId,
           title: 'NOVO SOCIAL LINK',
           message: `O operativo ${currentUser.name || 'Desconhecido'} quer criar um Social Link contigo!`,
-          type: 'CONFIDANT_REQUEST',
+          type: `CONFIDANT_REQUEST_${currentUser.id}`, // Guardamos o ID no type!
         },
       });
 
@@ -149,9 +144,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Ação inválida' }, { status: 400 });
   } catch (error: any) {
     console.error('Erro na gestão de Confidants:', error);
-    return NextResponse.json(
-      { error: error?.message || 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error?.message || 'Erro interno do servidor' }, { status: 500 });
   }
 }

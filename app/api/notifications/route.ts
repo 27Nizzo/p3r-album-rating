@@ -59,8 +59,17 @@ export async function PUT(req: Request) {
         data: { read: true },
       });
     } else {
+      // Marcar todas como lidas, EXCETO os pedidos de Social Link pendentes!
       await prisma.notification.updateMany({
-        where: { userId: user.id, read: false },
+        where: { 
+          userId: user.id, 
+          read: false,
+          NOT: {
+            type: {
+              startsWith: 'CONFIDANT_REQUEST'
+            }
+          }
+        },
         data: { read: true },
       });
     }
