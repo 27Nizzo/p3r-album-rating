@@ -493,6 +493,7 @@ export default function ProfilePage() {
       )}
 
       {/* ABA 2: VELVET COMPENDIUM */}
+{/* ABA 2: VELVET COMPENDIUM */}
       {activeTab === "compendium" && (
         <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6 -skew-x-3">
           <div className="skew-x-3 flex justify-between items-center mb-6 pb-4 border-b border-persona-cyan/20">
@@ -507,31 +508,37 @@ export default function ProfilePage() {
                 <p className="font-mono text-[10px] md:text-xs text-persona-cyan/60 uppercase">NENHUM ÁLBUM REGISTADO NO COMPENDIUM.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 w-full">
                 {favorites.map((fav) => (
                   <div
                     key={fav.id}
                     onMouseEnter={() => sfx.playHover()}
-                    className="bg-persona-dark/90 border border-persona-cyan/40 p-3 md:p-4 flex flex-col justify-between group hover:border-persona-cyan transition-all"
+                    className="bg-persona-dark/90 border border-persona-cyan/40 p-2 md:p-3 flex flex-col justify-between group hover:border-persona-cyan transition-all w-full overflow-hidden"
                   >
-                    <div>
-                      <div className="w-full aspect-square bg-persona-blue/40 border border-persona-cyan/50 mb-3 overflow-hidden flex items-center justify-center relative">
+                    <div className="w-full">
+                      <div className="relative w-full aspect-square bg-persona-blue/40 border border-persona-cyan/50 mb-2 overflow-hidden flex items-center justify-center shrink-0">
                         {fav.coverUrl ? (
-                          <img src={fav.coverUrl} alt={fav.albumTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <img 
+                            src={fav.coverUrl} 
+                            alt={fav.albumTitle} 
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                          />
                         ) : (
-                          <Disc className="w-10 h-10 md:w-12 md:h-12 text-persona-cyan/40" />
+                          <Disc className="w-8 h-8 md:w-10 md:h-10 text-persona-cyan/40" />
                         )}
                       </div>
-                      <h3 className="font-black italic text-xs md:text-sm text-persona-cyan uppercase truncate">{fav.albumTitle}</h3>
-                      <p className="text-[10px] md:text-xs font-mono text-persona-white/60 uppercase truncate">{fav.artistName} ({fav.releaseYear})</p>
+                      <div className="min-w-0 w-full">
+                        <h3 className="font-black italic text-[11px] md:text-sm text-persona-cyan uppercase truncate">{fav.albumTitle}</h3>
+                        <p className="text-[9px] md:text-xs font-mono text-persona-white/60 uppercase truncate">{fav.artistName} ({fav.releaseYear})</p>
+                      </div>
                     </div>
 
-                    <div className="flex justify-between items-center mt-3 pt-2 border-t border-persona-cyan/20">
-                      <span className="text-[8px] md:text-[9px] font-mono text-persona-cyan/40">{new Date(fav.createdAt).toLocaleDateString()}</span>
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-persona-cyan/20">
+                      <span className="text-[8px] md:text-[9px] font-mono text-persona-cyan/40 truncate mr-2">{new Date(fav.createdAt).toLocaleDateString()}</span>
                       <button
                         onClick={() => handleRemoveFavorite(fav.albumId)}
                         disabled={deletingFavAlbumId === fav.albumId}
-                        className="text-red-400 hover:text-red-300 p-1 border border-red-500/30 hover:border-red-500 bg-red-500/10 cursor-pointer disabled:opacity-40"
+                        className="text-red-400 hover:text-red-300 p-1 border border-red-500/30 hover:border-red-500 bg-red-500/10 cursor-pointer disabled:opacity-40 shrink-0"
                         title="Remover"
                       >
                         {deletingFavAlbumId === fav.albumId ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
@@ -544,7 +551,6 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-
       {/* ABA 3: STATS */}
       {activeTab === "stats" && (
         <SocialStats
