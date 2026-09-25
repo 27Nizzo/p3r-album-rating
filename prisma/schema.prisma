@@ -22,6 +22,9 @@ model User {
   comments      Comment[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime   @default(now()) @updatedAt
+  sentConnections     UserConnection[] @relation("sentConnections")
+  receivedConnections UserConnection[] @relation("receivedConnections")
+  notifications       Notification[]
 }
 
 model Favorite {
@@ -112,4 +115,36 @@ model Comment {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model UserConnection {
+  id         String           @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     ConnectionStatus @default(PENDING)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  sender   User @relation("sentConnections", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("receivedConnections", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

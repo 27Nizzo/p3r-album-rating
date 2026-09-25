@@ -12,8 +12,13 @@ import {
   BarChart3,
   BookmarkCheck,
   Disc,
+  UserPlus,
+  Check,
+  Clock,
+  UserCheck,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import SfxToggle from '@/components/SfxToggle';
 import { sfx } from '@/lib/sfx';
 import ExpandableText from '@/components/ExpandableText';
@@ -47,13 +52,27 @@ interface UserProfile {
   favorites: Favorite[];
 }
 
+interface ConnectionState {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+}
+
 export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { data: session } = useSession();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'reviews' | 'compendium'>('reviews');
 
+  // Estados do Social Link
+  const [connection, setConnection] = useState<ConnectionState | null>(null);
+  const [isSender, setIsSender] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // 1. Carregar perfil público
   useEffect(() => {
     const fetchPublicProfile = async () => {
       try {
@@ -75,6 +94,54 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
     fetchPublicProfile();
   }, [id]);
+
+  // 2. Carregar estado da relação (Confidant / Social Link)
+  const fetchConnectionState = async () => {
+    if (!session || !id) return;
+    try {
+      const res = await fetch(`/api/confidant?targetUserId=${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setConnection(data.connection);
+        setIsSender(data.isSender);
+      }
+    } catch (err) {
+      console.error('Erro ao verificar ligação:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchConnectionState();
+  }, [id, session]);
+
+  // Handler das ações do Social Link
+  const handleConfidantAction = async (action: 'REQUEST' | 'ACCEPT' | 'REMOVE') => {
+    if (!session) {
+      sfx.playClick();
+      alert('Precisas de iniciar sessão para criar um Social Link!');
+      return;
+    }
+
+    sfx.playClick();
+    setActionLoading(true);
+
+    try {
+      const res = await fetch('/api/confidant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUserId: id, action }),
+      });
+
+      if (res.ok) {
+        sfx.playSuccess();
+        await fetchConnectionState(); // Atualiza o botão após sucesso
+      }
+    } catch (err) {
+      console.error('Erro ao atualizar Social Link:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -100,13 +167,14 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
   const userReviews = profile.reviews || [];
   const favorites = profile.favorites || [];
-
   const totalReviews = userReviews.length;
 
-  const topAlbum =
-    userReviews.length > 0
+  const topAlbum = userReviews.length > 0
       ? [...userReviews].sort((a, b) => b.rating - a.rating)[0]
       : null;
+
+  // Lógica para saber se estou a ver o MEU PRÓPRIO perfil
+  const isMyProfile = session?.user && (session.user as any).id === id;
 
   return (
     <main className="min-h-screen bg-persona-dark text-persona-white relative overflow-hidden p-4 sm:p-6 md:p-12">
@@ -134,25 +202,81 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      {/* Cabeçalho do Perfil Público */}
+      {/* Dossiê do Perfil Público com Botão de Social Link */}
       <div className="bg-persona-dark/90 border-2 border-persona-cyan p-4 md:p-6 -skew-x-3 mb-6 md:mb-8 shadow-[0_0_30px_rgba(0,229,255,0.2)]">
-        <div className="skew-x-3 flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-6 text-center sm:text-left">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-persona-cyan bg-persona-blue/40 flex items-center justify-center overflow-hidden shrink-0 shadow-[0_0_15px_rgba(0,229,255,0.4)] relative">
-            {profile.image ? (
-              <img src={profile.image} alt="User" className="w-full h-full object-cover" />
-            ) : (
-              <User className="w-8 h-8 sm:w-10 sm:h-10 text-persona-cyan" />
-            )}
+        <div className="skew-x-3 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 md:gap-6 text-center sm:text-left">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 md:gap-6 min-w-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 border-2 border-persona-cyan bg-persona-blue/40 flex items-center justify-center overflow-hidden shrink-0 shadow-[0_0_15px_rgba(0,229,255,0.4)] relative">
+              {profile.image ? (
+                <img src={profile.image} alt="User" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-8 h-8 sm:w-10 sm:h-10 text-persona-cyan" />
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-1.5 bg-persona-cyan text-persona-dark px-2.5 py-0.5 font-black italic text-[9px] md:text-[10px] -skew-x-12 uppercase mb-1 md:mb-2">
+                <Sparkles className="w-3 h-3 skew-x-12" /> PUBLIC OPERATIVE DOSSIER
+              </div>
+              <h1 className="text-2xl md:text-3xl font-black italic uppercase text-white tracking-wider truncate">
+                {profile.name || 'Membro do Velvet'}
+              </h1>
+            </div>
           </div>
 
-          <div className="min-w-0">
-            <div className="inline-flex items-center gap-1.5 bg-persona-cyan text-persona-dark px-2.5 py-0.5 font-black italic text-[9px] md:text-[10px] -skew-x-12 uppercase mb-1 md:mb-2">
-              <Sparkles className="w-3 h-3 skew-x-12" /> PUBLIC OPERATIVE DOSSIER
+          {/* ÁREA DO BOTÃO DINÂMICO DO SOCIAL LINK */}
+          {session?.user && !isMyProfile && (
+            <div className="mt-2 sm:mt-0 shrink-0 w-full sm:w-auto">
+              {actionLoading ? (
+                <div className="bg-persona-blue/40 border border-persona-cyan/50 px-4 py-2 -skew-x-12 flex items-center justify-center gap-2 text-xs font-mono text-persona-cyan">
+                  <Loader2 className="w-4 h-4 animate-spin skew-x-12" />
+                  <span className="skew-x-12 uppercase">PROCESSANDO...</span>
+                </div>
+              ) : connection?.status === 'ACCEPTED' ? (
+                <button
+                  onClick={() => handleConfidantAction('REMOVE')}
+                  onMouseEnter={() => sfx.playHover()}
+                  className="w-full sm:w-auto bg-persona-cyan text-persona-dark border-2 border-persona-cyan hover:bg-red-500 hover:text-white hover:border-red-500 px-4 py-2 -skew-x-12 font-black italic text-xs uppercase transition-all shadow-[0_0_15px_rgba(0,229,255,0.4)] cursor-pointer flex items-center justify-center gap-2 group"
+                  title="Clica para desarmar ligação"
+                >
+                  <UserCheck className="w-4 h-4 skew-x-12" />
+                  <span className="skew-x-12 group-hover:hidden">RANK 1 CONFIDANT 🤝</span>
+                  <span className="skew-x-12 hidden group-hover:inline">BREAK LINK 💔</span>
+                </button>
+              ) : connection?.status === 'PENDING' ? (
+                isSender ? (
+                  <button
+                    onClick={() => handleConfidantAction('REMOVE')}
+                    onMouseEnter={() => sfx.playHover()}
+                    className="w-full sm:w-auto bg-persona-dark/80 border-2 border-persona-cyan/60 text-persona-cyan hover:border-red-400 hover:text-red-400 px-4 py-2 -skew-x-12 font-black italic text-xs uppercase transition-all cursor-pointer flex items-center justify-center gap-2 group"
+                    title="Clica para cancelar pedido"
+                  >
+                    <Clock className="w-4 h-4 skew-x-12 group-hover:hidden" />
+                    <span className="skew-x-12 group-hover:hidden">LINK PENDING...</span>
+                    <span className="skew-x-12 hidden group-hover:inline">CANCEL REQUEST</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleConfidantAction('ACCEPT')}
+                    onMouseEnter={() => sfx.playHover()}
+                    className="w-full sm:w-auto bg-persona-cyan text-persona-dark border-2 border-persona-cyan hover:bg-white px-4 py-2 -skew-x-12 font-black italic text-xs uppercase transition-all shadow-[0_0_15px_rgba(0,229,255,0.4)] cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-4 h-4 skew-x-12" />
+                    <span className="skew-x-12">ACCEPT LINK 🤝</span>
+                  </button>
+                )
+              ) : (
+                <button
+                  onClick={() => handleConfidantAction('REQUEST')}
+                  onMouseEnter={() => sfx.playHover()}
+                  className="w-full sm:w-auto bg-persona-blue/40 border-2 border-persona-cyan text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark px-4 py-2 -skew-x-12 font-black italic text-xs uppercase transition-all shadow-[0_0_15px_rgba(0,229,255,0.2)] cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <UserPlus className="w-4 h-4 skew-x-12" />
+                  <span className="skew-x-12">+ CREATE LINK</span>
+                </button>
+              )}
             </div>
-            <h1 className="text-2xl md:text-3xl font-black italic uppercase text-white tracking-wider truncate">
-              {profile.name || 'Membro do Velvet'}
-            </h1>
-          </div>
+          )}
         </div>
       </div>
 
@@ -194,7 +318,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      {/* Navegação entre Abas (Scroll horizontal em mobile) */}
+      {/* Navegação entre Abas */}
       <div className="flex overflow-x-auto gap-2 md:gap-3 mb-4 hide-scrollbar snap-x pb-2">
         <button
           onMouseEnter={() => sfx.playHover()}
@@ -229,7 +353,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
           <div className="skew-x-3 space-y-3">
             {userReviews.length === 0 ? (
               <p className="font-mono text-xs text-persona-cyan/60 uppercase py-6 text-center">
-                ESTE OPERATIVO AINDA NÃO SUBMETEU NENHUMA REVIEWS.
+                ESTE OPERATIVO AINDA NÃO SUBMETEU NENHUMA REVIEW.
               </p>
             ) : (
               userReviews.map((rev) => (
