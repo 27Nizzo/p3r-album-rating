@@ -70,9 +70,9 @@ export default function RankingsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-persona-dark text-persona-white flex flex-col items-center justify-center">
+      <main className="min-h-screen bg-persona-dark text-persona-white flex flex-col items-center justify-center p-4">
         <Loader2 className="w-10 h-10 text-persona-cyan animate-spin mb-4" />
-        <p className="font-mono text-xs text-persona-cyan tracking-widest uppercase">
+        <p className="font-mono text-xs text-persona-cyan tracking-widest uppercase text-center">
           A PROCESSAR ESTATÍSTICAS GLOBAIS...
         </p>
       </main>
@@ -80,58 +80,58 @@ export default function RankingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-persona-dark text-persona-white relative overflow-hidden p-6 md:p-12">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-persona-blue/20 blur-[140px] -z-10 rounded-full" />
-      <div className="absolute -bottom-20 -left-20 w-[600px] h-[600px] bg-persona-cyan/10 blur-[160px] -z-10 rounded-full" />
+    <main className="min-h-screen bg-persona-dark text-persona-white relative overflow-hidden p-4 sm:p-6 md:p-12">
+      <div className="absolute top-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-persona-blue/20 blur-[100px] md:blur-[140px] -z-10 rounded-full" />
+      <div className="absolute -bottom-20 -left-20 w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-persona-cyan/10 blur-[120px] md:blur-[160px] -z-10 rounded-full" />
 
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-6 md:space-y-8">
         {/* Cabeçalho */}
         <div className="flex justify-between items-center border-b-2 border-persona-cyan/30 pb-4">
           <Link
             href="/"
             onMouseEnter={() => sfx.playHover()}
             onClick={() => sfx.playClick()}
-            className="flex items-center gap-2 bg-persona-blue/40 border border-persona-cyan px-4 py-1.5 -skew-x-12 text-xs font-mono text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-persona-blue/40 border border-persona-cyan px-3 md:px-4 py-1.5 -skew-x-12 text-[10px] md:text-xs font-mono text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark transition-all cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4 skew-x-12" />
+            <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
             <span className="skew-x-12 font-bold uppercase">HOMEPAGE</span>
           </Link>
           <SfxToggle />
         </div>
 
         {/* Título Principal */}
-        <div className="bg-persona-dark/90 border-2 border-persona-cyan p-6 -skew-x-3 shadow-[0_0_30px_rgba(0,229,255,0.2)]">
-          <div className="skew-x-3 flex items-center gap-4">
-            <div className="p-3 bg-persona-cyan text-persona-dark -skew-x-12">
-              <Trophy className="w-8 h-8 skew-x-12" />
+        <div className="bg-persona-dark/90 border-2 border-persona-cyan p-4 md:p-6 -skew-x-3 shadow-[0_0_30px_rgba(0,229,255,0.2)]">
+          <div className="skew-x-3 flex items-center gap-3 md:gap-4">
+            <div className="p-2.5 md:p-3 bg-persona-cyan text-persona-dark -skew-x-12 shrink-0">
+              <Trophy className="w-6 h-6 md:w-8 md:h-8 skew-x-12" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 bg-persona-cyan text-persona-dark px-2.5 py-0.5 font-black italic text-[10px] -skew-x-12 uppercase mb-1">
+              <div className="inline-flex items-center gap-1.5 bg-persona-cyan text-persona-dark px-2 md:px-2.5 py-0.5 font-black italic text-[9px] md:text-[10px] -skew-x-12 uppercase mb-1">
                 <Sparkles className="w-3 h-3 skew-x-12" /> GLOBAL LEADERBOARDS
               </div>
-              <h1 className="text-3xl font-black italic uppercase text-white tracking-wider">
+              <h1 className="text-2xl md:text-3xl font-black italic uppercase text-white tracking-wider">
                 VELVET <span className="text-persona-cyan">RANKINGS</span>
               </h1>
             </div>
           </div>
         </div>
 
-        {/* Abas de Categoria */}
-        <div className="flex flex-wrap gap-3">
+        {/* Abas de Categoria (Deslizáveis em mobile) */}
+        <div className="flex overflow-x-auto md:flex-wrap gap-2 md:gap-3 pb-2 hide-scrollbar snap-x">
           <button
             onMouseEnter={() => sfx.playHover()}
             onClick={() => {
               sfx.playClick();
               setActiveCategory("rated");
             }}
-            className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
+            className={`px-4 md:px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer shrink-0 snap-start ${
               activeCategory === "rated"
                 ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
                 : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
             }`}
           >
-            <Star className="w-4 h-4 skew-x-12" />
-            <span className="skew-x-12">TOP RATED ({topRated.length})</span>
+            <Star className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
+            <span className="skew-x-12 text-xs md:text-sm">TOP RATED ({topRated.length})</span>
           </button>
 
           <button
@@ -140,14 +140,14 @@ export default function RankingsPage() {
               sfx.playClick();
               setActiveCategory("popular");
             }}
-            className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
+            className={`px-4 md:px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer shrink-0 snap-start ${
               activeCategory === "popular"
                 ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
                 : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
             }`}
           >
-            <Flame className="w-4 h-4 skew-x-12" />
-            <span className="skew-x-12">
+            <Flame className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
+            <span className="skew-x-12 text-xs md:text-sm">
               MAIS POPULARES ({mostReviewed.length})
             </span>
           </button>
@@ -158,15 +158,15 @@ export default function RankingsPage() {
               sfx.playClick();
               setActiveCategory("compendium");
             }}
-            className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
+            className={`px-4 md:px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer shrink-0 snap-start ${
               activeCategory === "compendium"
                 ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
                 : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
             }`}
           >
-            <BookmarkCheck className="w-4 h-4 skew-x-12" />
-            <span className="skew-x-12">
-              MOST SAVED IN COMPENDIUM ({mostSaved.length})
+            <BookmarkCheck className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
+            <span className="skew-x-12 text-xs md:text-sm">
+              MOST SAVED ({mostSaved.length})
             </span>
           </button>
 
@@ -176,14 +176,14 @@ export default function RankingsPage() {
               sfx.playClick();
               setActiveCategory("operatives");
             }}
-            className={`px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer ${
+            className={`px-4 md:px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer shrink-0 snap-start ${
               activeCategory === "operatives"
                 ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
                 : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
             }`}
           >
-            <User className="w-4 h-4 skew-x-12" />
-            <span className="skew-x-12">
+            <User className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
+            <span className="skew-x-12 text-xs md:text-sm">
               TOP OPERATIVOS ({topOperatives.length})
             </span>
           </button>
@@ -194,7 +194,7 @@ export default function RankingsPage() {
           key={activeCategory}
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-6 -skew-x-3 space-y-3"
+          className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6 -skew-x-3 space-y-3"
         >
           <div className="skew-x-3 space-y-3">
             {activeCategory === "operatives" ? (
@@ -210,18 +210,18 @@ export default function RankingsPage() {
                     href={`/profile/${op.id}`}
                     onMouseEnter={() => sfx.playHover()}
                     onClick={() => sfx.playClick()}
-                    className="bg-persona-dark/90 border border-persona-cyan/40 p-4 flex items-center justify-between gap-4 hover:border-persona-cyan transition-all group w-full cursor-pointer"
+                    className="bg-persona-dark/90 border border-persona-cyan/40 p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 hover:border-persona-cyan transition-all group w-full cursor-pointer"
                   >
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 w-full">
                       {/* Posição no Ranking */}
                       <span
-                        className={`font-black italic text-xl w-8 text-center shrink-0 ${index === 0 ? "text-yellow-400" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-persona-cyan/50"}`}
+                        className={`font-black italic text-lg md:text-xl w-6 md:w-8 text-center shrink-0 ${index === 0 ? "text-yellow-400" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-persona-cyan/50"}`}
                       >
                         #{index + 1}
                       </span>
 
                       {/* Avatar */}
-                      <div className="w-12 h-12 border border-persona-cyan bg-persona-blue/40 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 md:w-12 md:h-12 border border-persona-cyan bg-persona-blue/40 rounded-full overflow-hidden flex items-center justify-center shrink-0">
                         {op.image ? (
                           <img
                             src={op.image}
@@ -229,20 +229,20 @@ export default function RankingsPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User className="w-6 h-6 text-persona-cyan" />
+                          <User className="w-5 h-5 text-persona-cyan" />
                         )}
                       </div>
 
                       {/* Nome */}
-                      <p className="flex-1 min-w-0 font-black italic text-base text-persona-white uppercase group-hover:text-persona-cyan transition-colors truncate">
+                      <p className="flex-1 min-w-0 font-black italic text-sm md:text-base text-persona-white uppercase group-hover:text-persona-cyan transition-colors truncate">
                         {op.name || "OPERATIVE"}
                       </p>
                     </div>
 
                     {/* Badge */}
-                    <div className="flex items-center gap-2 bg-persona-blue/40 border border-persona-cyan/40 px-3 py-1 -skew-x-12 shrink-0">
-                      <Flame className="w-4 h-4 text-persona-cyan skew-x-12" />
-                      <span className="font-mono text-xs font-bold text-persona-cyan skew-x-12">
+                    <div className="flex items-center gap-2 bg-persona-blue/40 border border-persona-cyan/40 px-3 py-1 -skew-x-12 shrink-0 ml-10 sm:ml-0">
+                      <Flame className="w-3.5 h-3.5 md:w-4 md:h-4 text-persona-cyan skew-x-12" />
+                      <span className="font-mono text-[10px] md:text-xs font-bold text-persona-cyan skew-x-12">
                         {op.reviewsCount} REVIEWS
                       </span>
                     </div>
@@ -273,12 +273,12 @@ export default function RankingsPage() {
                     href={`/album/${album.albumId}`}
                     onMouseEnter={() => sfx.playHover()}
                     onClick={() => sfx.playClick()}
-                    className="bg-persona-dark/90 border border-persona-cyan/40 p-4 flex items-center justify-between gap-4 hover:border-persona-cyan transition-all group w-full cursor-pointer"
+                    className="bg-persona-dark/90 border border-persona-cyan/40 p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 hover:border-persona-cyan transition-all group w-full cursor-pointer"
                   >
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0 w-full">
                       {/* Posição no Ranking */}
                       <span
-                        className={`font-black italic text-xl w-8 text-center shrink-0 ${index === 0 ? "text-yellow-400" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-persona-cyan/50"}`}
+                        className={`font-black italic text-lg md:text-xl w-6 md:w-8 text-center shrink-0 ${index === 0 ? "text-yellow-400" : index === 1 ? "text-slate-300" : index === 2 ? "text-amber-600" : "text-persona-cyan/50"}`}
                       >
                         #{index + 1}
                       </span>
@@ -288,52 +288,52 @@ export default function RankingsPage() {
                         <img
                           src={album.coverUrl}
                           alt={album.albumTitle}
-                          className="w-14 h-14 object-cover border border-persona-cyan shrink-0"
+                          className="w-12 h-12 md:w-14 md:h-14 object-cover border border-persona-cyan shrink-0"
                         />
                       ) : (
-                        <div className="w-14 h-14 bg-persona-blue border border-persona-cyan flex items-center justify-center shrink-0">
-                          <Disc className="w-6 h-6 text-persona-cyan" />
+                        <div className="w-12 h-12 md:w-14 md:h-14 bg-persona-blue border border-persona-cyan flex items-center justify-center shrink-0">
+                          <Disc className="w-5 h-5 md:w-6 md:h-6 text-persona-cyan" />
                         </div>
                       )}
 
                       {/* Detalhes do Álbum */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-black italic text-base text-persona-cyan uppercase group-hover:underline truncate">
+                        <p className="font-black italic text-sm md:text-base text-persona-cyan uppercase group-hover:underline truncate">
                           {album.albumTitle}
                         </p>
-                        <p className="text-xs font-mono text-persona-white/60 uppercase truncate">
+                        <p className="text-[10px] md:text-xs font-mono text-persona-white/60 uppercase truncate">
                           {album.artistName} ({album.releaseYear})
                         </p>
                       </div>
                     </div>
 
                     {/* Métrica / Badge */}
-                    <div className="flex items-center gap-3 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0 ml-10 sm:ml-0">
                       {activeCategory === "rated" && (
-                        <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-3 py-1.5 -skew-x-12">
-                          <Star className="w-4 h-4 text-persona-cyan fill-persona-cyan skew-x-12" />
-                          <span className="font-mono text-sm font-bold text-persona-cyan skew-x-12">
+                        <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-2.5 py-1 md:px-3 md:py-1.5 -skew-x-12">
+                          <Star className="w-3.5 h-3.5 md:w-4 md:h-4 text-persona-cyan fill-persona-cyan skew-x-12" />
+                          <span className="font-mono text-xs md:text-sm font-bold text-persona-cyan skew-x-12">
                             {album.averageRating} / 5.0
                           </span>
-                          <span className="text-[10px] font-mono text-persona-white/50 skew-x-12">
+                          <span className="text-[9px] md:text-[10px] font-mono text-persona-white/50 skew-x-12">
                             ({album.reviewsCount})
                           </span>
                         </div>
                       )}
 
                       {activeCategory === "popular" && (
-                        <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-3 py-1.5 -skew-x-12">
-                          <Flame className="w-4 h-4 text-persona-cyan skew-x-12" />
-                          <span className="font-mono text-sm font-bold text-persona-cyan skew-x-12">
+                        <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-2.5 py-1 md:px-3 md:py-1.5 -skew-x-12">
+                          <Flame className="w-3.5 h-3.5 md:w-4 md:h-4 text-persona-cyan skew-x-12" />
+                          <span className="font-mono text-xs md:text-sm font-bold text-persona-cyan skew-x-12">
                             {album.reviewsCount} REVIEWS
                           </span>
                         </div>
                       )}
 
                       {activeCategory === "compendium" && (
-                        <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-3 py-1.5 -skew-x-12">
-                          <BookmarkCheck className="w-4 h-4 text-persona-cyan skew-x-12" />
-                          <span className="font-mono text-sm font-bold text-persona-cyan skew-x-12">
+                        <div className="flex items-center gap-1.5 bg-persona-blue/60 border border-persona-cyan/50 px-2.5 py-1 md:px-3 md:py-1.5 -skew-x-12">
+                          <BookmarkCheck className="w-3.5 h-3.5 md:w-4 md:h-4 text-persona-cyan skew-x-12" />
+                          <span className="font-mono text-xs md:text-sm font-bold text-persona-cyan skew-x-12">
                             {album.compendiumCount} SAVES
                           </span>
                         </div>
