@@ -83,13 +83,15 @@ export async function POST(request: Request) {
         select: { userId: true },
       });
 
-      if (review && review.userId !== user.id) {
+      if (review && review.userId && review.userId !== user.id) {
+        const targetUserId = review.userId;
+
         const existingConnection = await prisma.userConnection.findFirst({
           where: {
             status: 'ACCEPTED',
             OR: [
-              { senderId: user.id, receiverId: review.userId },
-              { senderId: review.userId, receiverId: user.id },
+              { senderId: user.id, receiverId: targetUserId },
+              { senderId: targetUserId, receiverId: user.id },
             ],
           },
         });
@@ -110,7 +112,7 @@ export async function POST(request: Request) {
           if (rankedUp) {
             await prisma.notification.create({
               data: {
-                userId: review.userId,
+                userId: targetUserId,
                 title: `RANK UP! (RANK ${newRank})`,
                 message: `A tua ligação com ${user.name || 'o teu Confidant'} subiu para RANK ${newRank}!`,
                 type: 'CONFIDANT_RANK_UP',

@@ -57,6 +57,7 @@ interface ConnectionState {
   senderId: string;
   receiverId: string;
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  rank?: number;
 }
 
 export default function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
