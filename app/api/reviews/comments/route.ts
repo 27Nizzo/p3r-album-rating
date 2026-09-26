@@ -76,6 +76,53 @@ export async function POST(request: Request) {
       },
     });
 
+    // --- LÓGICA DE AFINIDADE DE CONFIDANTS ---
+    try {
+      const review = await prisma.review.findUnique({
+        where: { id: reviewId },
+        select: { userId: true },
+      });
+
+      if (review && review.userId !== user.id) {
+        const existingConnection = await prisma.userConnection.findFirst({
+          where: {
+            status: 'ACCEPTED',
+            OR: [
+              { senderId: user.id, receiverId: review.userId },
+              { senderId: review.userId, receiverId: user.id },
+            ],
+          },
+        });
+
+        if (existingConnection) {
+          const { addAffinityPoints } = await import('@/lib/confidantRanks');
+          const { newRank, newAffinity, rankedUp } = addAffinityPoints(
+            existingConnection.rank,
+            existingConnection.affinity,
+            3 // +3 pontos por Comentário
+          );
+
+          await prisma.userConnection.update({
+            where: { id: existingConnection.id },
+            data: { rank: newRank, affinity: newAffinity },
+          });
+
+          if (rankedUp) {
+            await prisma.notification.create({
+              data: {
+                userId: review.userId,
+                title: `RANK UP! (RANK ${newRank})`,
+                message: `A tua ligação com ${user.name || 'o teu Confidant'} subiu para RANK ${newRank}!`,
+                type: 'CONFIDANT_RANK_UP',
+              },
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao adicionar afinidade por comentário:', err);
+    }
+
     return NextResponse.json({ comment }, { status: 201 });
   } catch (error: any) {
     console.error('Erro ao criar comentário:', error);

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      select: { id: true },
+      select: { id: true, name: true },
     });
 
     if (!user) {
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Dados do álbum incompletos' }, { status: 400 });
     }
 
-    // Criar o favorito (evita duplicados graças ao @@unique([userId, albumId]))
+    // Criar o favorito
     const favorite = await prisma.favorite.create({
       data: {
         albumId,
@@ -72,9 +72,53 @@ export async function POST(req: Request) {
       },
     });
 
+    // --- LÓGICA DE AFINIDADE DE CONFIDANTS (Gostos em Comum) ---
+    try {
+      const confidantConnections = await prisma.userConnection.findMany({
+        where: {
+          status: 'ACCEPTED',
+          OR: [{ senderId: user.id }, { receiverId: user.id }],
+        },
+      });
+
+      for (const conn of confidantConnections) {
+        const otherUserId = conn.senderId === user.id ? conn.receiverId : conn.senderId;
+
+        const hasSameAlbum = await prisma.favorite.findFirst({
+          where: { userId: otherUserId, albumId: albumId },
+        });
+
+        if (hasSameAlbum) {
+          const { addAffinityPoints } = await import('@/lib/confidantRanks');
+          const { newRank, newAffinity, rankedUp } = addAffinityPoints(
+            conn.rank,
+            conn.affinity,
+            1 // +1 ponto por álbum em comum
+          );
+
+          await prisma.userConnection.update({
+            where: { id: conn.id },
+            data: { rank: newRank, affinity: newAffinity },
+          });
+
+          if (rankedUp) {
+            await prisma.notification.create({
+              data: {
+                userId: otherUserId,
+                title: `RANK UP! (RANK ${newRank})`,
+                message: `A tua ligação com ${user.name || 'o teu Confidant'} subiu para RANK ${newRank}!`,
+                type: 'CONFIDANT_RANK_UP',
+              },
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao calcular afinidade por álbum em comum:', err);
+    }
+
     return NextResponse.json({ favorite }, { status: 201 });
   } catch (error: any) {
-    // Se o favorito já existir (erro de constraint única)
     if (error.code === 'P2002') {
       return NextResponse.json({ message: 'Já está nos favoritos' }, { status: 200 });
     }

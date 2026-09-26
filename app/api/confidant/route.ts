@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/authOptions';
 import { prisma } from '@/lib/prisma';
+import { addAffinityPoints } from '@/lib/confidantRanks';
 
 export async function GET(req: Request) {
   try {
@@ -46,6 +47,7 @@ export async function GET(req: Request) {
         sender: { select: { id: true, name: true, image: true } },
         receiver: { select: { id: true, name: true, image: true } },
       },
+      orderBy: { updatedAt: 'desc' },
     });
 
     return NextResponse.json({ confidants }, { status: 200 });
@@ -72,7 +74,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { targetUserId, action } = body;
+    const { targetUserId, action, points } = body;
 
     if (!targetUserId) {
       return NextResponse.json({ error: 'Utilizador destino em falta' }, { status: 400 });
@@ -91,6 +93,8 @@ export async function POST(req: Request) {
           senderId: currentUser.id,
           receiverId: targetUserId,
           status: 'PENDING',
+          rank: 1,
+          affinity: 0,
         },
       });
 
@@ -99,7 +103,7 @@ export async function POST(req: Request) {
           userId: targetUserId,
           title: 'NOVO SOCIAL LINK',
           message: `O operativo ${currentUser.name || 'Desconhecido'} quer criar um Social Link contigo!`,
-          type: `CONFIDANT_REQUEST_${currentUser.id}`, // Guardamos o ID no type!
+          type: `CONFIDANT_REQUEST_${currentUser.id}`,
         },
       });
 
@@ -113,19 +117,70 @@ export async function POST(req: Request) {
           receiverId: currentUser.id,
           status: 'PENDING',
         },
-        data: { status: 'ACCEPTED' },
+        data: { status: 'ACCEPTED', rank: 1, affinity: 0 },
       });
 
       await prisma.notification.create({
         data: {
           userId: targetUserId,
           title: 'SOCIAL LINK ESTABELECIDO',
-          message: `O operativo ${currentUser.name || 'Desconhecido'} aceitou a tua ligação! Rank 1 Confidant alcançado!`,
+          message: `O operativo ${currentUser.name || 'Desconhecido'} aceitou a tua ligação! Rank 1 Confidant estabelecido!`,
           type: 'CONFIDANT_ACCEPTED',
         },
       });
 
       return NextResponse.json({ success: true, message: 'Social Link aceite!' }, { status: 200 });
+    }
+
+    // Ação para aumentar afinidade e ver se sobe de Rank
+    if (action === 'ADD_AFFINITY') {
+      const existingConnection = await prisma.userConnection.findFirst({
+        where: {
+          status: 'ACCEPTED',
+          OR: [
+            { senderId: currentUser.id, receiverId: targetUserId },
+            { senderId: targetUserId, receiverId: currentUser.id },
+          ],
+        },
+      });
+
+      if (!existingConnection) {
+        return NextResponse.json({ message: 'Sem ligação ativa' }, { status: 200 });
+      }
+
+      const pointsToAdd = points || 2;
+      const { newRank, newAffinity, rankedUp } = addAffinityPoints(
+        existingConnection.rank,
+        existingConnection.affinity,
+        pointsToAdd
+      );
+
+      await prisma.userConnection.update({
+        where: { id: existingConnection.id },
+        data: { rank: newRank, affinity: newAffinity },
+      });
+
+      if (rankedUp) {
+        const otherUserId = existingConnection.senderId === currentUser.id 
+          ? existingConnection.receiverId 
+          : existingConnection.senderId;
+
+        // Notificar ambos os utilizadores do Rank Up!
+        const rankMessage = newRank === 10 
+          ? `ALCANÇASTE O RANK MAX (RANK 10) COM ${currentUser.name || 'o teu Confidant'}!`
+          : `A tua ligação com ${currentUser.name || 'o teu Confidant'} subiu para RANK ${newRank}!`;
+
+        await prisma.notification.create({
+          data: {
+            userId: otherUserId,
+            title: `RANK UP! (RANK ${newRank})`,
+            message: rankMessage,
+            type: 'CONFIDANT_RANK_UP',
+          },
+        });
+      }
+
+      return NextResponse.json({ success: true, newRank, newAffinity, rankedUp }, { status: 200 });
     }
 
     if (action === 'REJECT' || action === 'REMOVE') {

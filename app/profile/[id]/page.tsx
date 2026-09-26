@@ -240,7 +240,9 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
                   title="Clica para desarmar ligação"
                 >
                   <UserCheck className="w-4 h-4 skew-x-12" />
-                  <span className="skew-x-12 group-hover:hidden">RANK 1 CONFIDANT 🤝</span>
+                  <span className="skew-x-12 group-hover:hidden">
+                    {connection.rank === 10 ? 'RANK 10 MAX CONFIDANT 🌟' : `RANK ${connection.rank || 1} CONFIDANT 🤝`}
+                  </span>
                   <span className="skew-x-12 hidden group-hover:inline">BREAK LINK 💔</span>
                 </button>
               ) : connection?.status === 'PENDING' ? (
