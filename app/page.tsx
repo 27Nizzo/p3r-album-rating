@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import AuthModal from "@/components/AuthModal";
 import AudioPlayer from "@/components/AudioPlayer";
 import SfxToggle from "@/components/SfxToggle";
@@ -39,6 +40,12 @@ interface Album {
   artistId?: string;
   coverUrl: string;
   releaseYear: string;
+}
+
+interface UserSearchResult {
+  id: string;
+  name: string | null;
+  image: string | null;
 }
 
 interface Track {
@@ -71,6 +78,7 @@ interface Review {
 
 export default function Home() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
 
   // Estado do Sistema de Toast P3R
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -106,9 +114,10 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // 2. Outros Estados da Aplicação
+  // 2. Outros Estados da Aplicação (Pesquisa Global)
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Album[]>([]);
+  const [searchUsers, setSearchUsers] = useState<UserSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
   const [selectedAlbum, setSelectedAlbum] = useState<Album>({
@@ -131,6 +140,27 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"rate" | "community" | "tracks">(
     "rate",
   );
+
+  // Efeito para carregar o álbum no Spotlight quando redirecionado do Compendium
+  useEffect(() => {
+    const albumId = searchParams.get("albumId");
+    const albumTitle = searchParams.get("albumTitle");
+    const artistName = searchParams.get("artistName");
+    const coverUrl = searchParams.get("coverUrl");
+    const releaseYear = searchParams.get("releaseYear");
+
+    if (albumId && albumTitle) {
+      setSelectedAlbum({
+        id: albumId,
+        title: albumTitle,
+        artist: artistName || "Artist",
+        coverUrl: coverUrl || "",
+        releaseYear: releaseYear || "N/A",
+      });
+
+      setActiveTab("rate");
+    }
+  }, [searchParams]);
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -477,20 +507,23 @@ export default function Home() {
     checkIsFavorite();
   }, [selectedAlbum, session]);
 
+  // Pesquisa Global Unificada (Álbuns + Operativos)
   useEffect(() => {
     if (!query.trim()) {
       setSearchResults([]);
+      setSearchUsers([]);
       return;
     }
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(
-          `/api/spotify/search?q=${encodeURIComponent(query)}`,
-        );
-        const data = await res.json();
-        setSearchResults(data.albums || []);
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data.albums || []);
+          setSearchUsers(data.users || []);
+        }
       } catch (err) {
         console.error("Erro ao pesquisar:", err);
       } finally {
@@ -575,9 +608,9 @@ export default function Home() {
         </motion.div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-          {/* Grupo: Pesquisa + Botão de Rankings */}
+          {/* Grupo: Pesquisa Global + Botão de Rankings */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            {/* Barra de Pesquisa */}
+            {/* Barra de Pesquisa Global */}
             <div className="relative w-full sm:w-64 md:w-80">
               <div className="relative flex items-center bg-persona-dark/90 border-2 border-persona-cyan -skew-x-12 px-3 py-1.5 focus-within:shadow-[0_0_15px_rgba(0,229,255,0.4)] transition-all w-full">
                 {isSearching ? (
@@ -589,51 +622,105 @@ export default function Home() {
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search ÁLBUM..."
+                  placeholder="SEARCH ALBUM OR USER..."
                   className="bg-transparent text-persona-white placeholder-persona-cyan/40 text-[10px] md:text-xs font-mono tracking-wider focus:outline-none w-full skew-x-12 uppercase min-w-0"
                 />
               </div>
+
+              {/* Menu Flutuante com Categorias e z-[60] */}
               <AnimatePresence>
-                {searchResults.length > 0 && (
+                {(searchResults.length > 0 || searchUsers.length > 0) && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute z-[60] left-0 right-0 top-full mt-2 w-full bg-persona-dark border-2 border-persona-cyan shadow-[0_15px_40px_rgba(0,0,0,0.9)] max-h-60 md:max-h-80 overflow-y-auto"
+                    className="absolute z-[60] left-0 right-0 top-full mt-2 w-full bg-persona-dark border-2 border-persona-cyan shadow-[0_15px_40px_rgba(0,0,0,0.95)] max-h-80 overflow-y-auto divide-y divide-persona-cyan/20"
                   >
-                    {searchResults.map((album) => (
-                      <div
-                        key={album.id}
-                        onMouseEnter={() => sfx.playHover()}
-                        onClick={() => {
-                          sfx.playClick();
-                          setSelectedAlbum(album);
-                          setQuery("");
-                          searchResults.length = 0;
-                        }}
-                        className="flex items-center gap-3 p-2.5 border-b border-persona-cyan/20 hover:bg-persona-blue/40 cursor-pointer transition-colors group"
-                      >
-                        {album.coverUrl ? (
-                          <img
-                            src={album.coverUrl}
-                            alt={album.title}
-                            className="w-10 h-10 object-cover border border-persona-cyan shrink-0"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 bg-persona-blue flex items-center justify-center shrink-0">
-                            <Disc className="w-5 h-5 text-persona-cyan" />
-                          </div>
-                        )}
-                        <div className="overflow-hidden min-w-0">
-                          <p className="text-sm font-bold truncate group-hover:text-persona-cyan uppercase italic">
-                            {album.title}
-                          </p>
-                          <p className="text-[10px] md:text-xs font-mono text-persona-white/60 truncate uppercase">
-                            {album.artist} ({album.releaseYear})
-                          </p>
+                    {/* Categoria 1: Operativos / Utilizadores */}
+                    {searchUsers.length > 0 && (
+                      <div>
+                        <div className="bg-persona-blue/40 px-3 py-1 font-mono text-[9px] font-bold text-persona-cyan tracking-widest uppercase flex items-center gap-1">
+                          <User className="w-3 h-3" /> OPERATIVES ({searchUsers.length})
                         </div>
+                        {searchUsers.map((user) => (
+                          <Link
+                            key={user.id}
+                            href={`/profile/${user.id}`}
+                            onMouseEnter={() => sfx.playHover()}
+                            onClick={() => {
+                              sfx.playClick();
+                              setQuery("");
+                              setSearchUsers([]);
+                              setSearchResults([]);
+                            }}
+                            className="flex items-center gap-3 p-2.5 hover:bg-persona-blue/40 cursor-pointer transition-colors group"
+                          >
+                            <div className="w-8 h-8 rounded-full border border-persona-cyan overflow-hidden bg-persona-blue shrink-0 flex items-center justify-center">
+                              {user.image ? (
+                                <img
+                                  src={user.image}
+                                  alt={user.name || "User"}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <User className="w-4 h-4 text-persona-cyan" />
+                              )}
+                            </div>
+                            <div className="overflow-hidden min-w-0">
+                              <p className="text-xs font-black italic uppercase text-white group-hover:text-persona-cyan transition-colors truncate">
+                                {user.name || "OPERATIVE"}
+                              </p>
+                              <span className="text-[9px] font-mono text-persona-cyan/60 uppercase block">
+                                Ver Dossiê →
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
                       </div>
-                    ))}
+                    )}
+
+                    {/* Categoria 2: Álbuns */}
+                    {searchResults.length > 0 && (
+                      <div>
+                        <div className="bg-persona-blue/40 px-3 py-1 font-mono text-[9px] font-bold text-persona-cyan tracking-widest uppercase flex items-center gap-1">
+                          <Disc className="w-3 h-3" /> ALBUMS ({searchResults.length})
+                        </div>
+                        {searchResults.map((album) => (
+                          <div
+                            key={album.id}
+                            onMouseEnter={() => sfx.playHover()}
+                            onClick={() => {
+                              sfx.playClick();
+                              setSelectedAlbum(album);
+                              setQuery("");
+                              setSearchResults([]);
+                              setSearchUsers([]);
+                            }}
+                            className="flex items-center gap-3 p-2.5 border-b border-persona-cyan/10 hover:bg-persona-blue/40 cursor-pointer transition-colors group"
+                          >
+                            {album.coverUrl ? (
+                              <img
+                                src={album.coverUrl}
+                                alt={album.title}
+                                className="w-9 h-9 object-cover border border-persona-cyan shrink-0"
+                              />
+                            ) : (
+                              <div className="w-9 h-9 bg-persona-blue flex items-center justify-center shrink-0">
+                                <Disc className="w-4 h-4 text-persona-cyan" />
+                              </div>
+                            )}
+                            <div className="overflow-hidden min-w-0">
+                              <p className="text-xs font-bold truncate group-hover:text-persona-cyan uppercase italic text-white">
+                                {album.title}
+                              </p>
+                              <p className="text-[10px] font-mono text-persona-white/60 truncate uppercase">
+                                {album.artist} ({album.releaseYear})
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -762,7 +849,7 @@ export default function Home() {
                     rel="noopener noreferrer"
                     onMouseEnter={() => sfx.playHover()}
                     onClick={() => sfx.playClick()}
-                    className="inline-flex items-center gap-1.5 px-2 md:px-3 py-1  border font-mono text-[9px] md:text-xs font-bold uppercase transition-all bg-[#1DB954]/20 border-[#1DB954] text-[#1DB954] hover:bg-[#1DB954] hover:text-black shadow-[0_0_10px_rgba(29,185,84,0.3)] cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-2 md:px-3 py-1 border font-mono text-[9px] md:text-xs font-bold uppercase transition-all bg-[#1DB954]/20 border-[#1DB954] text-[#1DB954] hover:bg-[#1DB954] hover:text-black shadow-[0_0_10px_rgba(29,185,84,0.3)] cursor-pointer"
                     title="Ouvir Álbum Completo no Spotify"
                   >
                     <div className="flex items-center gap-1.5">

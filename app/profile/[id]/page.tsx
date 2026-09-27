@@ -354,8 +354,8 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
 
       {/* Conteúdo das Abas */}
       {activeTab === 'reviews' && (
-        <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6 -skew-x-3">
-          <div className="skew-x-3 space-y-3">
+        <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6">
+          <div className="space-y-3">
             {userReviews.length === 0 ? (
               <p className="font-mono text-xs text-persona-cyan/60 uppercase py-6 text-center">
                 ESTE OPERATIVO AINDA NÃO SUBMETEU NENHUMA REVIEWS.
@@ -387,33 +387,65 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
         </div>
       )}
 
-      {activeTab === 'compendium' && (
-        <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6 -skew-x-3">
-          <div className="skew-x-3">
+      {/* ABA 2: VELVET COMPENDIUM */}
+      {activeTab === "compendium" && (
+        <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-persona-cyan/20">
+            <h2 className="text-lg md:text-xl font-black italic uppercase text-persona-cyan flex items-center gap-2">
+              <BookmarkCheck className="w-4 h-4 md:w-5 md:h-5" /> VELVET
+              COMPENDIUM ({favorites.length})
+            </h2>
+          </div>
+
+          <div>
             {favorites.length === 0 ? (
-              <p className="font-mono text-xs text-persona-cyan/60 uppercase py-6 text-center">
-                O COMPENDIUM DESTE OPERATIVO ESTÁ VAZIO.
-              </p>
+              <div className="bg-persona-dark/60 border border-persona-cyan/30 p-6 text-center">
+                <p className="font-mono text-[10px] md:text-xs text-persona-cyan/60 uppercase">
+                  NENHUM ÁLBUM REGISTADO NO COMPENDIUM.
+                </p>
+              </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 w-full">
                 {favorites.map((fav) => (
-                  <div key={fav.id} className="bg-persona-dark/90 border border-persona-cyan/40 p-2 md:p-3 flex flex-col justify-between w-full overflow-hidden">
+                  <div
+                    key={fav.id}
+                    onMouseEnter={() => sfx.playHover()}
+                    className="bg-persona-dark/90 border border-persona-cyan/40 p-2 md:p-3 flex flex-col justify-between group hover:border-persona-cyan transition-all w-full overflow-hidden"
+                  >
                     <div className="w-full">
                       <div className="relative w-full aspect-square bg-persona-blue/40 border border-persona-cyan/50 mb-2 overflow-hidden flex items-center justify-center shrink-0">
                         {fav.coverUrl ? (
-                          <img 
-                            src={fav.coverUrl} 
-                            alt={fav.albumTitle} 
-                            className="absolute inset-0 w-full h-full object-cover" 
+                          <img
+                            src={fav.coverUrl}
+                            alt={fav.albumTitle}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />
                         ) : (
                           <Disc className="w-8 h-8 md:w-10 md:h-10 text-persona-cyan/40" />
                         )}
                       </div>
                       <div className="min-w-0 w-full">
-                        <h3 className="font-black italic text-[11px] md:text-sm text-persona-cyan uppercase truncate">{fav.albumTitle}</h3>
-                        <p className="text-[9px] md:text-xs font-mono text-persona-white/60 uppercase truncate">{fav.artistName} ({fav.releaseYear})</p>
+                        <h3 className="font-black italic text-[11px] md:text-sm text-persona-cyan uppercase truncate">
+                          {fav.albumTitle}
+                        </h3>
+                        <p className="text-[9px] md:text-xs font-mono text-persona-white/60 uppercase truncate">
+                          {fav.artistName} ({fav.releaseYear})
+                        </p>
                       </div>
+                    </div>
+
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-persona-cyan/20 gap-2">
+                      {/* BOTÃO QoL: REVIEW / SPOTLIGHT */}
+                      <Link
+                        href={`/?albumId=${fav.albumId}&albumTitle=${encodeURIComponent(fav.albumTitle)}&artistName=${encodeURIComponent(fav.artistName)}&coverUrl=${encodeURIComponent(fav.coverUrl)}&releaseYear=${encodeURIComponent(fav.releaseYear)}`}
+                        onMouseEnter={() => sfx.playHover()}
+                        onClick={() => sfx.playClick()}
+                        className="bg-persona-cyan/20 border border-persona-cyan/60 hover:bg-persona-cyan hover:text-persona-dark text-persona-cyan px-2 py-1 -skew-x-12 font-mono text-[9px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer truncate"
+                        title="Avaliar este álbum no Spotlight"
+                      >
+                        <Flame className="w-3 h-3 skew-x-12 shrink-0" />
+                        <span className="skew-x-12 truncate">REVIEW</span>
+                      </Link>
                     </div>
                   </div>
                 ))}

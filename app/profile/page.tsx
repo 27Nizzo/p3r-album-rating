@@ -121,7 +121,7 @@ export default function ProfilePage() {
         }
       }
 
-      // NOVO: Social Links / Ligados ao Utilizador
+      // Social Links
       const resLinks = await fetch("/api/social-links");
       if (resLinks.ok) {
         const textLinks = await resLinks.text();
@@ -136,6 +136,7 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/");
@@ -267,12 +268,12 @@ export default function ProfilePage() {
           <span className="skew-x-12">Homepage</span>
         </Link>
 
-        {/* Grupo do Canto Superior Direito */}
         <div className="flex items-center gap-2 md:gap-3">
           <SfxToggle />
           <SettingsModal />
         </div>
       </div>
+
       {/* Cabeçalho do Perfil */}
       <div className="bg-persona-dark/90 border-2 border-persona-cyan p-4 md:p-6 -skew-x-3 mb-6 md:mb-8 shadow-[0_0_30px_rgba(0,229,255,0.2)]">
         <div className="skew-x-3 flex flex-col md:flex-row items-center md:items-start justify-between gap-4 md:gap-6">
@@ -437,7 +438,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Navegação entre Abas (Scroll horizontal em mobile) */}
+      {/* Navegação entre Abas */}
       <div className="flex overflow-x-auto gap-2 md:gap-3 mb-4 hide-scrollbar snap-x pb-2">
         <button
           onMouseEnter={() => sfx.playHover()}
@@ -650,7 +651,7 @@ export default function ProfilePage() {
             </h2>
           </div>
 
-          <div className="">
+          <div>
             {favorites.length === 0 ? (
               <div className="bg-persona-dark/60 border border-persona-cyan/30 p-6 text-center">
                 <p className="font-mono text-[10px] md:text-xs text-persona-cyan/60 uppercase">
@@ -687,15 +688,25 @@ export default function ProfilePage() {
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-persona-cyan/20">
-                      <span className="text-[8px] md:text-[9px] font-mono text-persona-cyan/40 truncate mr-2">
-                        {new Date(fav.createdAt).toLocaleDateString()}
-                      </span>
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-persona-cyan/20 gap-2">
+                      {/* BOTÃO QoL: REVIEW / SPOTLIGHT */}
+                      <Link
+                        href={`/?albumId=${fav.albumId}&albumTitle=${encodeURIComponent(fav.albumTitle)}&artistName=${encodeURIComponent(fav.artistName)}&coverUrl=${encodeURIComponent(fav.coverUrl)}&releaseYear=${encodeURIComponent(fav.releaseYear)}`}
+                        onMouseEnter={() => sfx.playHover()}
+                        onClick={() => sfx.playClick()}
+                        className="bg-persona-cyan/20 border border-persona-cyan/60 hover:bg-persona-cyan hover:text-persona-dark text-persona-cyan px-2 py-1 -skew-x-12 font-mono text-[9px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer truncate"
+                        title="Avaliar este álbum no Spotlight"
+                      >
+                        <Flame className="w-3 h-3 skew-x-12 shrink-0" />
+                        <span className="skew-x-12 truncate">REVIEW</span>
+                      </Link>
+
+                      {/* Botão para Remover do Compendium */}
                       <button
                         onClick={() => handleRemoveFavorite(fav.albumId)}
                         disabled={deletingFavAlbumId === fav.albumId}
                         className="text-red-400 hover:text-red-300 p-1 border border-red-500/30 hover:border-red-500 bg-red-500/10 cursor-pointer disabled:opacity-40 shrink-0"
-                        title="Remover"
+                        title="Remover do Compendium"
                       >
                         {deletingFavAlbumId === fav.albumId ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
@@ -719,7 +730,7 @@ export default function ProfilePage() {
           totalLikes={totalLikes}
           compendiumCount={compendiumCount}
           uniqueArtistsCount={uniqueArtistsCount}
-          socialLinks={socialLinks} // <-- Passa a lista real aqui!
+          socialLinks={socialLinks}
         />
       )}
     </main>
