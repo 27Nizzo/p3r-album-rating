@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Disc,
@@ -76,7 +76,7 @@ interface Review {
   isLikedByMe?: boolean;
 }
 
-export default function Home() {
+function HomeContent() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
 
@@ -1456,5 +1456,22 @@ export default function Home() {
       {/* Sistema Flutuante de Toasts P3R */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-persona-dark flex flex-col items-center justify-center p-4">
+          <Loader2 className="w-10 h-10 text-persona-cyan animate-spin mb-2" />
+          <p className="font-mono text-xs text-persona-cyan uppercase tracking-widest">
+            LOADING VELVET SYSTEM...
+          </p>
+        </div>
+      }
+    >
+      <HomeContent />
+    </Suspense>
   );
 }
