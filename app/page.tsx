@@ -15,17 +15,17 @@ import {
   Pause,
   ListMusic,
   LogIn,
-  LogOut,
   User,
   Bookmark,
   BookmarkCheck,
   Trophy,
 } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import AuthModal from "@/components/AuthModal";
 import AudioPlayer from "@/components/AudioPlayer";
 import SfxToggle from "@/components/SfxToggle";
+import SettingsModal from "@/components/SettingsModal";
 import { sfx } from "@/lib/sfx";
 import ExpandableText from "@/components/ExpandableText";
 import ReviewComments from "@/components/ReviewComments";
@@ -560,7 +560,7 @@ export default function Home() {
       <div className="absolute inset-0 p3r-scanlines pointer-events-none -z-10 opacity-40" />
 
       {/* Cabeçalho */}
-<header className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 border-b-2 border-persona-cyan/30 pb-4">
+      <header className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 border-b-2 border-persona-cyan/30 pb-4">
         <motion.div
           initial={{ x: -50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -639,7 +639,7 @@ export default function Home() {
               </AnimatePresence>
             </div>
 
-            {/* Botão Rankings à direita da barra de pesquisa */}
+            {/* Botão Rankings */}
             <Link
               href="/rankings"
               onMouseEnter={() => sfx.playHover()}
@@ -651,50 +651,41 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* Área de Autenticação + SFX Toggle + NOTIFICAÇÕES */}
-          <div className="flex items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
+          {/* Área de Autenticação + SFX Toggle + NOTIFICAÇÕES + DEFINIÇÕES */}
+          <div className="flex items-center justify-center sm:justify-end gap-2 md:gap-3 w-full sm:w-auto">
             <SfxToggle />
 
             {session ? (
               <>
-                {/* ---> COMPONENTE DE NOTIFICAÇÕES AQUI <--- */}
+                {/* NOTIFICAÇÕES */}
                 <NotificationCenter />
-                
-                <div className="flex items-center justify-between sm:justify-start gap-3 bg-persona-blue/20 border border-persona-cyan/40 px-3 py-1.5 -skew-x-12 w-full sm:w-auto">
-                  <Link
-                    href="/profile"
-                    onMouseEnter={() => sfx.playHover()}
-                    onClick={() => sfx.playClick()}
-                    className="skew-x-12 flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer min-w-0"
-                    title="Ir para o meu perfil"
-                  >
-                    <div className="w-6 h-6 rounded-full border border-persona-cyan flex items-center justify-center overflow-hidden shrink-0 bg-persona-blue/40">
-                      {session.user?.image ? (
-                        <img
-                          src={session.user.image}
-                          alt="User"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-3.5 h-3.5 text-persona-cyan" />
-                      )}
-                    </div>
-                    <span className="text-[10px] md:text-xs font-mono text-persona-cyan uppercase font-bold truncate max-w-[120px] md:max-w-[100px]">
-                      {session.user?.name || session.user?.email}
-                    </span>
-                  </Link>
-                  <button
-                    onClick={() => {
-                      sfx.playClick();
-                      signOut();
-                    }}
-                    onMouseEnter={() => sfx.playHover()}
-                    title="Sair"
-                    className="text-red-400 hover:text-red-300 ml-1 skew-x-12 cursor-pointer shrink-0"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
+
+                {/* BOTÃO DO PERFIL DO UTILIZADOR */}
+                <Link
+                  href="/profile"
+                  onMouseEnter={() => sfx.playHover()}
+                  onClick={() => sfx.playClick()}
+                  className="flex items-center gap-2 bg-persona-blue/20 border border-persona-cyan/40 px-2.5 py-1.5 -skew-x-12 hover:border-persona-cyan transition-all cursor-pointer min-w-0"
+                  title="Ir para o meu perfil"
+                >
+                  <div className="w-6 h-6 rounded-full border border-persona-cyan flex items-center justify-center overflow-hidden shrink-0 bg-persona-blue/40 skew-x-12">
+                    {session.user?.image ? (
+                      <img
+                        src={session.user.image}
+                        alt="User"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-3.5 h-3.5 text-persona-cyan" />
+                    )}
+                  </div>
+                  <span className="text-[10px] md:text-xs font-mono text-persona-cyan uppercase font-bold truncate max-w-[90px] sm:max-w-[120px] skew-x-12">
+                    {session.user?.name || session.user?.email}
+                  </span>
+                </Link>
+
+                {/* BOTÃO INDEPENDENTE DAS DEFINIÇÕES (ENGRENAGEM) */}
+                <SettingsModal />
               </>
             ) : (
               <button
@@ -820,7 +811,7 @@ export default function Home() {
         </motion.div>
 
         <div className="lg:col-span-7 flex flex-col space-y-4 justify-center">
-          {/* Navegação de Tabs (Deslizáveis em mobile) */}
+          {/* Navegação de Tabs */}
           <div className="flex overflow-x-auto md:flex-wrap gap-2 md:gap-3 mb-2 pb-2 md:pb-0 hide-scrollbar snap-x px-2 md:px-0">
             <button
               onMouseEnter={() => sfx.playHover()}

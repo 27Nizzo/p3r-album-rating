@@ -47,3 +47,29 @@ body {
   );
   background-size: 100% 4px;
 }
+
+/* Temas Personalizados Velvet Records */
+
+/* TEMA DEFAULT: BLUE (Persona 3 Reload) */
+:root, [data-theme="blue"] {
+  --color-persona-dark: #050b14;
+  --color-persona-blue: #002b5b;
+  --color-persona-cyan: #00e5ff;
+  --color-persona-white: #e0f7fa;
+}
+
+/* TEMA GREEN (Emerald Velvet) */
+[data-theme="green"] {
+  --color-persona-dark: #03140a;
+  --color-persona-blue: #023819;
+  --color-persona-cyan: #00ff88;
+  --color-persona-white: #e0faf0;
+}
+
+/* TEMA RED & BLACK (Crimson Velvet) */
+[data-theme="red"] {
+  --color-persona-dark: #000000;
+  --color-persona-blue: #3a0007;
+  --color-persona-cyan: #ff003c;
+  --color-persona-white: #ffffff;
+}

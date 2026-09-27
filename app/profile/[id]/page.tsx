@@ -20,6 +20,7 @@ import {
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import SfxToggle from '@/components/SfxToggle';
+import SettingsModal from '@/components/SettingsModal';
 import { sfx } from '@/lib/sfx';
 import ExpandableText from '@/components/ExpandableText';
 import ShareButton from '@/components/ShareButton';
@@ -182,7 +183,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
       <div className="absolute top-0 right-0 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-persona-blue/20 blur-[100px] md:blur-[140px] -z-10 rounded-full" />
       <div className="absolute -bottom-20 -left-20 w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-persona-cyan/10 blur-[120px] md:blur-[160px] -z-10 rounded-full" />
 
-      {/* Cabeçalho de Navegação e Partilha */}
+      {/* Cabeçalho de Navegação, Partilha e Configurações */}
       <div className="flex justify-between items-center border-b-2 border-persona-cyan/30 pb-4 mb-6 md:mb-8">
         <Link
           href="/"
@@ -200,6 +201,7 @@ export default function PublicProfilePage({ params }: { params: Promise<{ id: st
             text={`Confere o perfil e as análises musicais do operativo ${profile.name || 'Operativo'} no Velvet Records!`}
           />
           <SfxToggle />
+          <SettingsModal />
         </div>
       </div>
 
