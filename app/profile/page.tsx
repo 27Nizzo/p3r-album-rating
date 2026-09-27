@@ -25,6 +25,7 @@ import SfxToggle from "@/components/SfxToggle";
 import { sfx } from "@/lib/sfx";
 import ExpandableText from "@/components/ExpandableText";
 import SocialStats from "@/components/SocialStats";
+import SettingsModal from "@/components/SettingsModal";
 
 interface Review {
   id: string;
@@ -55,7 +56,9 @@ export default function ProfilePage() {
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deletingFavAlbumId, setDeletingFavAlbumId] = useState<string | null>(null);
+  const [deletingFavAlbumId, setDeletingFavAlbumId] = useState<string | null>(
+    null,
+  );
 
   const [isEditing, setIsEditing] = useState(false);
   const [newName, setNewName] = useState("");
@@ -84,9 +87,13 @@ export default function ProfilePage() {
     reader.readAsDataURL(file);
   };
 
-  const [activeTab, setActiveTab] = useState<"reviews" | "compendium" | "stats">("reviews");
+  const [activeTab, setActiveTab] = useState<
+    "reviews" | "compendium" | "stats"
+  >("reviews");
   const [filterRating, setFilterRating] = useState<number | "all">("all");
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "highest" | "lowest">("newest");
+  const [sortBy, setSortBy] = useState<
+    "newest" | "oldest" | "highest" | "lowest"
+  >("newest");
 
   const fetchUserData = async () => {
     try {
@@ -190,18 +197,32 @@ export default function ProfilePage() {
   };
 
   const totalReviews = userReviews.length;
-  const topAlbum = userReviews.length > 0 ? [...userReviews].sort((a, b) => b.rating - a.rating)[0] : null;
+  const topAlbum =
+    userReviews.length > 0
+      ? [...userReviews].sort((a, b) => b.rating - a.rating)[0]
+      : null;
 
   const reviewsCount = userReviews.length;
-  const totalLikes = userReviews.reduce((acc, rev) => acc + (rev.likesCount || 0), 0);
+  const totalLikes = userReviews.reduce(
+    (acc, rev) => acc + (rev.likesCount || 0),
+    0,
+  );
   const compendiumCount = favorites.length;
   const uniqueArtistsCount = new Set(userReviews.map((r) => r.artistName)).size;
 
   const filteredReviews = userReviews
-    .filter((rev) => (filterRating === "all" ? true : rev.rating === filterRating))
+    .filter((rev) =>
+      filterRating === "all" ? true : rev.rating === filterRating,
+    )
     .sort((a, b) => {
-      if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      if (sortBy === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      if (sortBy === "newest")
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+      if (sortBy === "oldest")
+        return (
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
       if (sortBy === "highest") return b.rating - a.rating;
       if (sortBy === "lowest") return a.rating - b.rating;
       return 0;
@@ -231,14 +252,24 @@ export default function ProfilePage() {
           <ArrowLeft className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
           <span className="skew-x-12">Homepage</span>
         </Link>
-        <SfxToggle />
-      </div>
 
+        {/* Grupo do Canto Superior Direito */}
+        <div className="flex items-center gap-2 md:gap-3">
+          <SfxToggle />
+          <SettingsModal />
+        </div>
+      </div>
       {/* Cabeçalho do Perfil */}
       <div className="bg-persona-dark/90 border-2 border-persona-cyan p-4 md:p-6 -skew-x-3 mb-6 md:mb-8 shadow-[0_0_30px_rgba(0,229,255,0.2)]">
         <div className="skew-x-3 flex flex-col md:flex-row items-center md:items-start justify-between gap-4 md:gap-6">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6 w-full text-center md:text-left">
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+            />
 
             <div
               onClick={() => {
@@ -248,11 +279,17 @@ export default function ProfilePage() {
                 }
               }}
               className={`w-16 h-16 md:w-20 md:h-20 border-2 border-persona-cyan bg-persona-blue/40 flex items-center justify-center overflow-hidden shrink-0 shadow-[0_0_15px_rgba(0,229,255,0.4)] relative group ${
-                isEditing ? "cursor-pointer hover:border-white transition-all" : ""
+                isEditing
+                  ? "cursor-pointer hover:border-white transition-all"
+                  : ""
               }`}
             >
               {(isEditing ? newImage : session?.user?.image) ? (
-                <img src={isEditing ? newImage : session?.user?.image || ""} alt="User" className="w-full h-full object-cover" />
+                <img
+                  src={isEditing ? newImage : session?.user?.image || ""}
+                  alt="User"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <User className="w-8 h-8 md:w-10 md:h-10 text-persona-cyan" />
               )}
@@ -273,9 +310,14 @@ export default function ProfilePage() {
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleSaveProfile} className="space-y-3 mt-1 max-w-md mx-auto md:mx-0">
+                <form
+                  onSubmit={handleSaveProfile}
+                  className="space-y-3 mt-1 max-w-md mx-auto md:mx-0"
+                >
                   <div>
-                    <label className="block text-[9px] md:text-[10px] font-mono text-persona-cyan uppercase mb-1">CODENAME / NOME</label>
+                    <label className="block text-[9px] md:text-[10px] font-mono text-persona-cyan uppercase mb-1">
+                      CODENAME / NOME
+                    </label>
                     <input
                       type="text"
                       value={newName}
@@ -291,13 +333,20 @@ export default function ProfilePage() {
                       onMouseEnter={() => sfx.playHover()}
                       className="bg-persona-cyan text-persona-dark font-black px-3 py-1 text-[10px] md:text-xs uppercase italic flex items-center gap-1 hover:bg-white transition-all cursor-pointer"
                     >
-                      {isSavingProfile ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                      {isSavingProfile ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Check className="w-3 h-3" />
+                      )}
                       GUARDAR
                     </button>
                     <button
                       type="button"
                       onMouseEnter={() => sfx.playHover()}
-                      onClick={() => { sfx.playClick(); setIsEditing(false); }}
+                      onClick={() => {
+                        sfx.playClick();
+                        setIsEditing(false);
+                      }}
                       className="bg-persona-blue/40 border border-persona-cyan/50 text-persona-cyan font-bold px-3 py-1 text-[10px] md:text-xs uppercase flex items-center gap-1 hover:bg-persona-cyan/20 transition-all cursor-pointer"
                     >
                       <X className="w-3 h-3" /> CANCELAR
@@ -311,7 +360,10 @@ export default function ProfilePage() {
           {!isEditing && (
             <button
               onMouseEnter={() => sfx.playHover()}
-              onClick={() => { sfx.playClick(); setIsEditing(true); }}
+              onClick={() => {
+                sfx.playClick();
+                setIsEditing(true);
+              }}
               className="bg-persona-blue/40 border border-persona-cyan text-persona-cyan hover:bg-persona-cyan hover:text-persona-dark px-3 py-1.5 -skew-x-12 font-black italic text-[10px] md:text-xs uppercase transition-all flex items-center gap-1.5 cursor-pointer shrink-0 w-full sm:w-auto justify-center"
             >
               <Edit3 className="w-3.5 h-3.5 skew-x-12" />
@@ -328,8 +380,12 @@ export default function ProfilePage() {
             <BarChart3 className="w-5 h-5 md:w-6 md:h-6 text-persona-cyan" />
           </div>
           <div className="skew-x-6 min-w-0">
-            <span className="text-[9px] md:text-[10px] font-mono text-persona-cyan/70 uppercase block">TOTAL REVIEWS</span>
-            <span className="text-xl md:text-2xl font-black italic text-white">{totalReviews}</span>
+            <span className="text-[9px] md:text-[10px] font-mono text-persona-cyan/70 uppercase block">
+              TOTAL REVIEWS
+            </span>
+            <span className="text-xl md:text-2xl font-black italic text-white">
+              {totalReviews}
+            </span>
           </div>
         </div>
 
@@ -338,8 +394,12 @@ export default function ProfilePage() {
             <BookmarkCheck className="w-5 h-5 md:w-6 md:h-6 text-persona-cyan" />
           </div>
           <div className="skew-x-6 min-w-0">
-            <span className="text-[9px] md:text-[10px] font-mono text-persona-cyan/70 uppercase block">COMPENDIUM</span>
-            <span className="text-xl md:text-2xl font-black italic text-white truncate block">{favorites.length} ÁLBUNS</span>
+            <span className="text-[9px] md:text-[10px] font-mono text-persona-cyan/70 uppercase block">
+              COMPENDIUM
+            </span>
+            <span className="text-xl md:text-2xl font-black italic text-white truncate block">
+              {favorites.length} ÁLBUNS
+            </span>
           </div>
         </div>
 
@@ -348,9 +408,17 @@ export default function ProfilePage() {
             <Award className="w-5 h-5 md:w-6 md:h-6 text-persona-cyan" />
           </div>
           <div className="skew-x-6 min-w-0">
-            <span className="text-[9px] md:text-[10px] font-mono text-persona-cyan/70 uppercase block">FAVORITO</span>
-            <span className="text-xs md:text-sm font-black italic text-white truncate block">{topAlbum ? topAlbum.albumTitle : "NENHUM"}</span>
-            {topAlbum && <span className="text-[9px] md:text-[10px] font-mono text-persona-cyan">{topAlbum.rating} ⭐</span>}
+            <span className="text-[9px] md:text-[10px] font-mono text-persona-cyan/70 uppercase block">
+              FAVORITO
+            </span>
+            <span className="text-xs md:text-sm font-black italic text-white truncate block">
+              {topAlbum ? topAlbum.albumTitle : "NENHUM"}
+            </span>
+            {topAlbum && (
+              <span className="text-[9px] md:text-[10px] font-mono text-persona-cyan">
+                {topAlbum.rating} ⭐
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -359,7 +427,10 @@ export default function ProfilePage() {
       <div className="flex overflow-x-auto gap-2 md:gap-3 mb-4 hide-scrollbar snap-x pb-2">
         <button
           onMouseEnter={() => sfx.playHover()}
-          onClick={() => { sfx.playClick(); setActiveTab("reviews"); }}
+          onClick={() => {
+            sfx.playClick();
+            setActiveTab("reviews");
+          }}
           className={`px-4 md:px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer shrink-0 snap-start ${
             activeTab === "reviews"
               ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
@@ -367,12 +438,17 @@ export default function ProfilePage() {
           }`}
         >
           <Flame className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
-          <span className="skew-x-12 text-xs md:text-sm">01 // REVIEWS ({userReviews.length})</span>
+          <span className="skew-x-12 text-xs md:text-sm">
+            01 // REVIEWS ({userReviews.length})
+          </span>
         </button>
 
         <button
           onMouseEnter={() => sfx.playHover()}
-          onClick={() => { sfx.playClick(); setActiveTab("compendium"); }}
+          onClick={() => {
+            sfx.playClick();
+            setActiveTab("compendium");
+          }}
           className={`px-4 md:px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer shrink-0 snap-start ${
             activeTab === "compendium"
               ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
@@ -380,12 +456,17 @@ export default function ProfilePage() {
           }`}
         >
           <BookmarkCheck className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
-          <span className="skew-x-12 text-xs md:text-sm">02 // COMPENDIUM ({favorites.length})</span>
+          <span className="skew-x-12 text-xs md:text-sm">
+            02 // COMPENDIUM ({favorites.length})
+          </span>
         </button>
 
         <button
           onMouseEnter={() => sfx.playHover()}
-          onClick={() => { sfx.playClick(); setActiveTab("stats"); }}
+          onClick={() => {
+            sfx.playClick();
+            setActiveTab("stats");
+          }}
           className={`px-4 md:px-5 py-2 -skew-x-12 font-black italic uppercase transition-all flex items-center gap-2 border-2 cursor-pointer shrink-0 snap-start ${
             activeTab === "stats"
               ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_15px_rgba(0,229,255,0.4)]"
@@ -393,7 +474,9 @@ export default function ProfilePage() {
           }`}
         >
           <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
-          <span className="skew-x-12 text-xs md:text-sm">03 // VELVET STATS</span>
+          <span className="skew-x-12 text-xs md:text-sm">
+            03 // VELVET STATS
+          </span>
         </button>
       </div>
 
@@ -402,38 +485,70 @@ export default function ProfilePage() {
         <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6 -skew-x-3">
           <div className="skew-x-3 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-6 pb-4 border-b border-persona-cyan/20">
             <h2 className="text-lg md:text-xl font-black italic uppercase text-persona-cyan flex items-center gap-2">
-              <Flame className="w-4 h-4 md:w-5 md:h-5" /> REVIEWS ({filteredReviews.length})
+              <Flame className="w-4 h-4 md:w-5 md:h-5" /> REVIEWS (
+              {filteredReviews.length})
             </h2>
 
             <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full xl:w-auto">
               <div className="flex items-center gap-1 bg-persona-dark border border-persona-cyan/50 px-2 py-1 text-[10px] md:text-xs font-mono">
                 <Filter className="w-3 h-3 text-persona-cyan" />
-                <span className="text-persona-cyan/60 uppercase text-[9px]">RATING:</span>
+                <span className="text-persona-cyan/60 uppercase text-[9px]">
+                  RATING:
+                </span>
                 <select
                   value={filterRating}
-                  onChange={(e) => setFilterRating(e.target.value === "all" ? "all" : Number(e.target.value))}
+                  onChange={(e) =>
+                    setFilterRating(
+                      e.target.value === "all" ? "all" : Number(e.target.value),
+                    )
+                  }
                   className="bg-transparent text-white focus:outline-none uppercase font-bold cursor-pointer"
                 >
-                  <option value="all" className="bg-persona-dark text-white">TODOS</option>
-                  <option value="5" className="bg-persona-dark text-white">5 Estrelas</option>
-                  <option value="4" className="bg-persona-dark text-white">4 Estrelas</option>
-                  <option value="3" className="bg-persona-dark text-white">3 Estrelas</option>
-                  <option value="2" className="bg-persona-dark text-white">2 Estrelas</option>
-                  <option value="1" className="bg-persona-dark text-white">1 Estrela</option>
+                  <option value="all" className="bg-persona-dark text-white">
+                    TODOS
+                  </option>
+                  <option value="5" className="bg-persona-dark text-white">
+                    5 Estrelas
+                  </option>
+                  <option value="4" className="bg-persona-dark text-white">
+                    4 Estrelas
+                  </option>
+                  <option value="3" className="bg-persona-dark text-white">
+                    3 Estrelas
+                  </option>
+                  <option value="2" className="bg-persona-dark text-white">
+                    2 Estrelas
+                  </option>
+                  <option value="1" className="bg-persona-dark text-white">
+                    1 Estrela
+                  </option>
                 </select>
               </div>
 
               <div className="flex items-center gap-1 bg-persona-dark border border-persona-cyan/50 px-2 py-1 text-[10px] md:text-xs font-mono">
-                <span className="text-persona-cyan/60 uppercase text-[9px]">ORDEM:</span>
+                <span className="text-persona-cyan/60 uppercase text-[9px]">
+                  ORDEM:
+                </span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
                   className="bg-transparent text-white focus:outline-none uppercase font-bold cursor-pointer"
                 >
-                  <option value="newest" className="bg-persona-dark text-white">Mais Recentes</option>
-                  <option value="oldest" className="bg-persona-dark text-white">Mais Antigas</option>
-                  <option value="highest" className="bg-persona-dark text-white">Maior Rating</option>
-                  <option value="lowest" className="bg-persona-dark text-white">Menor Rating</option>
+                  <option value="newest" className="bg-persona-dark text-white">
+                    Mais Recentes
+                  </option>
+                  <option value="oldest" className="bg-persona-dark text-white">
+                    Mais Antigas
+                  </option>
+                  <option
+                    value="highest"
+                    className="bg-persona-dark text-white"
+                  >
+                    Maior Rating
+                  </option>
+                  <option value="lowest" className="bg-persona-dark text-white">
+                    Menor Rating
+                  </option>
                 </select>
               </div>
             </div>
@@ -443,11 +558,15 @@ export default function ProfilePage() {
             {loading ? (
               <div className="text-center py-12">
                 <Loader2 className="w-8 h-8 text-persona-cyan animate-spin mx-auto mb-2" />
-                <p className="font-mono text-xs text-persona-cyan/70 uppercase">A CARREGAR AS TUAS CRÍTICAS...</p>
+                <p className="font-mono text-xs text-persona-cyan/70 uppercase">
+                  A CARREGAR AS TUAS CRÍTICAS...
+                </p>
               </div>
             ) : filteredReviews.length === 0 ? (
               <div className="bg-persona-dark/60 border border-persona-cyan/30 p-6 text-center">
-                <p className="font-mono text-[10px] md:text-xs text-persona-cyan/60 uppercase">NENHUMA CRÍTICA ENCONTRADA.</p>
+                <p className="font-mono text-[10px] md:text-xs text-persona-cyan/60 uppercase">
+                  NENHUMA CRÍTICA ENCONTRADA.
+                </p>
               </div>
             ) : (
               filteredReviews.map((rev) => (
@@ -458,11 +577,19 @@ export default function ProfilePage() {
                 >
                   <div className="flex items-center gap-3 md:gap-4 min-w-0 w-full">
                     {rev.coverUrl && (
-                      <img src={rev.coverUrl} alt={rev.albumTitle} className="w-12 h-12 md:w-14 md:h-14 object-cover border border-persona-cyan shrink-0" />
+                      <img
+                        src={rev.coverUrl}
+                        alt={rev.albumTitle}
+                        className="w-12 h-12 md:w-14 md:h-14 object-cover border border-persona-cyan shrink-0"
+                      />
                     )}
                     <div className="min-w-0 flex-1">
-                      <p className="font-black italic text-xs md:text-sm text-persona-cyan uppercase truncate">{rev.albumTitle}</p>
-                      <p className="text-[10px] md:text-xs font-mono text-persona-white/60 uppercase truncate">{rev.artistName}</p>
+                      <p className="font-black italic text-xs md:text-sm text-persona-cyan uppercase truncate">
+                        {rev.albumTitle}
+                      </p>
+                      <p className="text-[10px] md:text-xs font-mono text-persona-white/60 uppercase truncate">
+                        {rev.artistName}
+                      </p>
                       <div className="mt-1">
                         <ExpandableText text={rev.comment} maxLength={100} />
                       </div>
@@ -472,7 +599,10 @@ export default function ProfilePage() {
                   <div className="flex items-center justify-between w-full sm:w-auto gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-persona-cyan/20">
                     <div className="flex text-persona-cyan">
                       {Array.from({ length: rev.rating }).map((_, i) => (
-                        <Star key={i} className="w-3.5 h-3.5 md:w-4 md:h-4 fill-persona-cyan" />
+                        <Star
+                          key={i}
+                          className="w-3.5 h-3.5 md:w-4 md:h-4 fill-persona-cyan"
+                        />
                       ))}
                     </div>
 
@@ -482,7 +612,11 @@ export default function ProfilePage() {
                       className="text-red-400 hover:text-red-300 transition-colors p-1.5 md:p-2 border border-red-500/30 hover:border-red-500 bg-red-500/10 cursor-pointer disabled:opacity-40"
                       title="Apagar crítica"
                     >
-                      {deletingId === rev.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                      {deletingId === rev.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -497,14 +631,17 @@ export default function ProfilePage() {
         <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6 -skew-x-3">
           <div className="skew-x-3 flex justify-between items-center mb-6 pb-4 border-b border-persona-cyan/20">
             <h2 className="text-lg md:text-xl font-black italic uppercase text-persona-cyan flex items-center gap-2">
-              <BookmarkCheck className="w-4 h-4 md:w-5 md:h-5" /> VELVET COMPENDIUM ({favorites.length})
+              <BookmarkCheck className="w-4 h-4 md:w-5 md:h-5" /> VELVET
+              COMPENDIUM ({favorites.length})
             </h2>
           </div>
 
           <div className="skew-x-3">
             {favorites.length === 0 ? (
               <div className="bg-persona-dark/60 border border-persona-cyan/30 p-6 text-center">
-                <p className="font-mono text-[10px] md:text-xs text-persona-cyan/60 uppercase">NENHUM ÁLBUM REGISTADO NO COMPENDIUM.</p>
+                <p className="font-mono text-[10px] md:text-xs text-persona-cyan/60 uppercase">
+                  NENHUM ÁLBUM REGISTADO NO COMPENDIUM.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 w-full">
@@ -517,30 +654,40 @@ export default function ProfilePage() {
                     <div className="w-full">
                       <div className="relative w-full aspect-square bg-persona-blue/40 border border-persona-cyan/50 mb-2 overflow-hidden flex items-center justify-center shrink-0">
                         {fav.coverUrl ? (
-                          <img 
-                            src={fav.coverUrl} 
-                            alt={fav.albumTitle} 
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                          <img
+                            src={fav.coverUrl}
+                            alt={fav.albumTitle}
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
                           />
                         ) : (
                           <Disc className="w-8 h-8 md:w-10 md:h-10 text-persona-cyan/40" />
                         )}
                       </div>
                       <div className="min-w-0 w-full">
-                        <h3 className="font-black italic text-[11px] md:text-sm text-persona-cyan uppercase truncate">{fav.albumTitle}</h3>
-                        <p className="text-[9px] md:text-xs font-mono text-persona-white/60 uppercase truncate">{fav.artistName} ({fav.releaseYear})</p>
+                        <h3 className="font-black italic text-[11px] md:text-sm text-persona-cyan uppercase truncate">
+                          {fav.albumTitle}
+                        </h3>
+                        <p className="text-[9px] md:text-xs font-mono text-persona-white/60 uppercase truncate">
+                          {fav.artistName} ({fav.releaseYear})
+                        </p>
                       </div>
                     </div>
 
                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-persona-cyan/20">
-                      <span className="text-[8px] md:text-[9px] font-mono text-persona-cyan/40 truncate mr-2">{new Date(fav.createdAt).toLocaleDateString()}</span>
+                      <span className="text-[8px] md:text-[9px] font-mono text-persona-cyan/40 truncate mr-2">
+                        {new Date(fav.createdAt).toLocaleDateString()}
+                      </span>
                       <button
                         onClick={() => handleRemoveFavorite(fav.albumId)}
                         disabled={deletingFavAlbumId === fav.albumId}
                         className="text-red-400 hover:text-red-300 p-1 border border-red-500/30 hover:border-red-500 bg-red-500/10 cursor-pointer disabled:opacity-40 shrink-0"
                         title="Remover"
                       >
-                        {deletingFavAlbumId === fav.albumId ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                        {deletingFavAlbumId === fav.albumId ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3 h-3" />
+                        )}
                       </button>
                     </div>
                   </div>

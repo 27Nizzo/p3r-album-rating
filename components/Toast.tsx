@@ -15,7 +15,7 @@ interface ToastProps {
   onDismiss: (id: string) => void;
 }
 
-export default function ToastContainer({ toasts, onDismiss }: ToastProps) {
+export default function anToastContainer({ toasts, onDismiss }: ToastProps) {
   return (
     <div className="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none max-w-sm w-full px-4">
       <AnimatePresence>

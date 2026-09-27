@@ -90,3 +90,12 @@ body {
   --color-persona-cyan: #0055ff;       /* Azul elétrico vibrante para destaques e bordas */
   --color-persona-cyan-glow: #3377ff;  /* Brilho para efeitos de seleção */
 }
+
+/* TEMA PURPLE (Persona 1 / Dark Velvet Style) */
+[data-theme="purple"] {
+  --color-persona-white: #ffffff;
+  --color-persona-dark: #0f0a1c;         /* Fundo roxo ultra escuro */
+  --color-persona-blue: #1c1033;         /* Fundo dos cards e contêineres em tom de violeta escuro */
+  --color-persona-cyan: #b026ff;         /* Roxo néon elétrico vibrante */
+  --color-persona-cyan-glow: #d880ff;    /* Brilho suave lilás/violeta */
+}

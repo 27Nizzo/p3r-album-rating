@@ -34,8 +34,7 @@ export default function SettingsModal() {
   };
 
   return (
-    <div className="relative inline-block z-50" ref={dropdownRef}>
-      {/* Botão de Engrenagem Independente */}
+    <div className={`relative inline-block ${isOpen ? "z-[100]" : "z-30"}`} ref={dropdownRef}>
       <button
         type="button"
         onClick={() => {
@@ -137,6 +136,23 @@ export default function SettingsModal() {
                   {theme === 'yellow' && <Check className="w-3 h-3 text-black" />}
                 </div>
                 <span className="skew-x-12">P4 GOLDEN</span>
+              </button>
+
+              {/* Tema Purple (Roxo Velvet / P1) */}
+              <button
+                type="button"
+                onClick={() => handleThemeChange('purple')}
+                onMouseEnter={() => sfx.playHover()}
+                className={`p-2 border text-[10px] font-black italic uppercase -skew-x-12 flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                  theme === 'purple'
+                    ? 'border-[#b026ff] bg-[#b026ff]/20 text-[#b026ff] shadow-[0_0_10px_rgba(176,38,255,0.4)]'
+                    : 'border-persona-cyan/30 text-persona-white/60 hover:border-[#b026ff]'
+                }`}
+              >
+                <div className="w-4 h-4 rounded-full bg-[#b026ff] border border-white skew-x-12 flex items-center justify-center">
+                  {theme === 'purple' && <Check className="w-3 h-3 text-black" />}
+                </div>
+                <span className="skew-x-12">PURPLE</span>
               </button>
 
               {/* Tema White (Light Mode) */}

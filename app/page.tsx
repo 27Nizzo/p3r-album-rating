@@ -599,7 +599,7 @@ export default function Home() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute z-50 left-0 right-0 top-full mt-2 w-full bg-persona-dark border-2 border-persona-cyan shadow-[0_15px_40px_rgba(0,0,0,0.9)] max-h-60 md:max-h-80 overflow-y-auto"
+                    className="absolute z-[60] left-0 right-0 top-full mt-2 w-full bg-persona-dark border-2 border-persona-cyan shadow-[0_15px_40px_rgba(0,0,0,0.9)] max-h-60 md:max-h-80 overflow-y-auto"
                   >
                     {searchResults.map((album) => (
                       <div
