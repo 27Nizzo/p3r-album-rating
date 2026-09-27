@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 import SfxToggle from "@/components/SfxToggle";
 import { sfx } from "@/lib/sfx";
 import ExpandableText from "@/components/ExpandableText";
-import SocialStats from "@/components/SocialStats";
+import SocialStats, { SocialLinkUser } from "@/components/SocialStats";
 import SettingsModal from "@/components/SettingsModal";
 
 interface Review {
@@ -67,6 +67,8 @@ export default function ProfilePage() {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [socialLinks, setSocialLinks] = useState<SocialLinkUser[]>([]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -98,6 +100,8 @@ export default function ProfilePage() {
   const fetchUserData = async () => {
     try {
       setLoading(true);
+
+      // Reviews do Utilizador
       const resReviews = await fetch("/api/reviews/user");
       if (resReviews.ok) {
         const textRev = await resReviews.text();
@@ -107,6 +111,7 @@ export default function ProfilePage() {
         }
       }
 
+      // Compendium / Favoritos
       const resFavs = await fetch("/api/favorites");
       if (resFavs.ok) {
         const textFav = await resFavs.text();
@@ -115,13 +120,22 @@ export default function ProfilePage() {
           if (dataFav.favorites) setFavorites(dataFav.favorites);
         }
       }
+
+      // NOVO: Social Links / Ligados ao Utilizador
+      const resLinks = await fetch("/api/social-links");
+      if (resLinks.ok) {
+        const textLinks = await resLinks.text();
+        if (textLinks && !textLinks.trim().startsWith("<")) {
+          const dataLinks = JSON.parse(textLinks);
+          if (dataLinks.socialLinks) setSocialLinks(dataLinks.socialLinks);
+        }
+      }
     } catch (err) {
       console.error("Erro ao carregar dados do perfil:", err);
     } finally {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/");
@@ -437,8 +451,8 @@ export default function ProfilePage() {
               : "bg-persona-dark/80 text-persona-white border-persona-blue hover:border-persona-cyan"
           }`}
         >
-          <Flame className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
-          <span className="skew-x-12 text-xs md:text-sm">
+          <Flame className="w-3.5 h-3.5 md:w-4 md:h-4 " />
+          <span className=" text-xs md:text-sm">
             01 // REVIEWS ({userReviews.length})
           </span>
         </button>
@@ -482,7 +496,7 @@ export default function ProfilePage() {
 
       {/* ABA 1: HISTÓRICO DE REVIEWS */}
       {activeTab === "reviews" && (
-        <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6 -skew-x-3">
+        <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6">
           <div className="skew-x-3 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-3 mb-6 pb-4 border-b border-persona-cyan/20">
             <h2 className="text-lg md:text-xl font-black italic uppercase text-persona-cyan flex items-center gap-2">
               <Flame className="w-4 h-4 md:w-5 md:h-5" /> REVIEWS (
@@ -554,7 +568,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="skew-x-3 space-y-3">
+          <div className="space-y-3">
             {loading ? (
               <div className="text-center py-12">
                 <Loader2 className="w-8 h-8 text-persona-cyan animate-spin mx-auto mb-2" />
@@ -628,15 +642,15 @@ export default function ProfilePage() {
 
       {/* ABA 2: VELVET COMPENDIUM */}
       {activeTab === "compendium" && (
-        <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6 -skew-x-3">
-          <div className="skew-x-3 flex justify-between items-center mb-6 pb-4 border-b border-persona-cyan/20">
+        <div className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-persona-cyan/20">
             <h2 className="text-lg md:text-xl font-black italic uppercase text-persona-cyan flex items-center gap-2">
               <BookmarkCheck className="w-4 h-4 md:w-5 md:h-5" /> VELVET
               COMPENDIUM ({favorites.length})
             </h2>
           </div>
 
-          <div className="skew-x-3">
+          <div className="">
             {favorites.length === 0 ? (
               <div className="bg-persona-dark/60 border border-persona-cyan/30 p-6 text-center">
                 <p className="font-mono text-[10px] md:text-xs text-persona-cyan/60 uppercase">
@@ -705,6 +719,7 @@ export default function ProfilePage() {
           totalLikes={totalLikes}
           compendiumCount={compendiumCount}
           uniqueArtistsCount={uniqueArtistsCount}
+          socialLinks={socialLinks} // <-- Passa a lista real aqui!
         />
       )}
     </main>

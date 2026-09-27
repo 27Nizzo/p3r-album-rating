@@ -148,7 +148,7 @@ export default function RankingsPage() {
           >
             <Flame className="w-3.5 h-3.5 md:w-4 md:h-4 skew-x-12" />
             <span className="skew-x-12 text-xs md:text-sm">
-              MAIS POPULARES ({mostReviewed.length})
+              Popular ({mostReviewed.length})
             </span>
           </button>
 
@@ -196,7 +196,7 @@ export default function RankingsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-persona-dark/80 border-2 border-persona-cyan/40 p-4 md:p-6 -skew-x-3 space-y-3"
         >
-          <div className="skew-x-3 space-y-3">
+          <div className="space-y-3">
             {activeCategory === "operatives" ? (
               // Tabela de Operativos
               topOperatives.length === 0 ? (

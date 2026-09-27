@@ -1,12 +1,23 @@
 "use client";
 
-import { Sparkles, Flame, Zap, Compass, Info } from "lucide-react";
+import { Sparkles, Flame, Zap, Compass, Info, Users, Star, User } from "lucide-react";
+import Link from "next/link";
+import { sfx } from "@/lib/sfx";
+
+export interface SocialLinkUser {
+  id: string;
+  name: string;
+  image?: string | null;
+  arcana?: string; // ex: "THE FOOL", "THE MAGICIAN", "THE LOVERS"
+  rank: number;    // Nível de 1 a 10
+}
 
 interface SocialStatsProps {
   reviewsCount: number;
   totalLikes: number;
   compendiumCount: number;
   uniqueArtistsCount: number;
+  socialLinks?: SocialLinkUser[];
 }
 
 export default function SocialStats({
@@ -14,6 +25,7 @@ export default function SocialStats({
   totalLikes,
   compendiumCount,
   uniqueArtistsCount,
+  socialLinks = [],
 }: SocialStatsProps) {
   const criticismThresholds = [0, 5, 15, 30, 50];
   const influenceThresholds = [0, 10, 25, 50, 100];
@@ -66,149 +78,213 @@ export default function SocialStats({
   ]);
 
   return (
-    <div className="bg-persona-dark/95 border-2 border-persona-cyan p-5 sm:p-6 -skew-x-3 shadow-[0_0_35px_rgba(0,229,255,0.25)] relative overflow-hidden">
-      <div className="skew-x-3 space-y-6">
-        
-        {/* Cabeçalho */}
-        <div className="flex justify-between items-center border-b-2 border-persona-cyan/40 pb-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-persona-cyan animate-pulse" />
-            <h2 className="text-xl font-black italic uppercase tracking-wider text-persona-white">
-              Velvet <span className="text-persona-cyan">STATS</span>
-            </h2>
-          </div>
-          <span className="text-[11px] font-mono text-persona-cyan/70 uppercase tracking-widest">
-            P3R // VELVET SYSTEM
-          </span>
-        </div>
-
-        {/* Contentor do Diagrama em Tríade */}
-        <div className="relative w-full max-w-[420px] h-[310px] sm:h-[340px] mx-auto bg-persona-blue/10 border border-persona-cyan/20 rounded-xl flex items-center justify-center overflow-hidden p-2">
-
-          {/* CÍRCULO 1: INFLUENCE (Topo) */}
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-cyan-500/20 border-2 border-persona-cyan/80 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center shadow-[0_0_25px_rgba(0,229,255,0.35)] z-20 transition-all duration-300 hover:scale-105 group cursor-pointer">
-            {/* Overlay Explicativo em Hover */}
-            <div className="absolute inset-0 bg-persona-dark/95 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-4 text-center z-40 border-2 border-persona-cyan">
-              <Info className="w-4 h-4 text-persona-cyan mb-1" />
-              <p className="text-[10px] font-mono text-persona-cyan font-bold uppercase mb-0.5">INFLUENCE</p>
-              <p className="text-[9px] font-mono text-persona-white/90 leading-tight">
-                Mede a tua relevância e popularidade na comunidade através dos likes acumulados nas tuas críticas.
-              </p>
+    <div className="space-y-6">
+      {/* PAINEL PRINCIPAL VELVET STATS */}
+      <div className="bg-persona-dark/95 border-2 border-persona-cyan p-5 sm:p-6 shadow-[0_0_35px_rgba(0,229,255,0.25)] relative overflow-hidden">
+        <div className="skew-x-3 space-y-6">
+          {/* Cabeçalho */}
+          <div className="flex justify-between items-center border-b-2 border-persona-cyan/40 pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-persona-cyan animate-pulse" />
+              <h2 className="text-xl font-black italic uppercase tracking-wider text-persona-white">
+                Velvet <span className="text-persona-cyan">STATS</span>
+              </h2>
             </div>
-
-            <div className="absolute inset-1.5 rounded-full border border-persona-cyan/30 pointer-events-none" />
-            <div className="absolute inset-3 rounded-full border border-dashed border-persona-cyan/20 pointer-events-none" />
-
-            <div className="text-persona-cyan font-mono text-[9px] sm:text-[10px] tracking-widest uppercase flex items-center gap-1 font-bold z-10">
-              <Zap className="w-3 h-3" /> INFLUENCE
-            </div>
-
-            <div className="text-4xl sm:text-5xl font-black italic text-white drop-shadow-[0_0_12px_rgba(0,229,255,0.8)] my-0.5 z-10">
-              {influence.rank}
-            </div>
-
-            <span className="text-[9px] font-mono text-persona-white/70 z-10">{influence.raw} likes</span>
-
-            <div className="absolute -bottom-1 bg-persona-dark border-2 border-persona-cyan px-2.5 py-0.5 -skew-x-12 shadow-[0_0_10px_rgba(0,229,255,0.5)] z-30 group-hover:bg-persona-cyan transition-colors">
-              <span className="text-[10px] font-mono text-persona-cyan group-hover:text-persona-dark uppercase font-black skew-x-12 block truncate max-w-[120px]">
-                {influence.title}
-              </span>
-            </div>
+            <span className="text-[11px] font-mono text-persona-cyan/70 uppercase tracking-widest">
+              P3R // VELVET SYSTEM
+            </span>
           </div>
 
-          {/* CÍRCULO 2: EXPLORATION (Baixo Esquerda) */}
-          <div className="absolute bottom-2 left-1 sm:left-3 w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-blue-600/20 border-2 border-persona-cyan/80 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center shadow-[0_0_25px_rgba(0,150,255,0.35)] z-10 transition-all duration-300 hover:scale-105 group cursor-pointer">
-            {/* Overlay Explicativo em Hover */}
-            <div className="absolute inset-0 bg-persona-dark/95 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-4 text-center z-40 border-2 border-persona-cyan">
-              <Info className="w-4 h-4 text-persona-cyan mb-1" />
-              <p className="text-[10px] font-mono text-persona-cyan font-bold uppercase mb-0.5">EXPLORATION</p>
-              <p className="text-[9px] font-mono text-persona-white/90 leading-tight">
-                Mede a tua biblioteca musical com base nos álbuns no Compendium e variedade de artistas explorados.
-              </p>
-            </div>
+          {/* Contentor do Diagrama em Tríade */}
+          <div className="relative w-full max-w-[420px] h-[310px] sm:h-[340px] mx-auto bg-persona-blue/10 border border-persona-cyan/20 rounded-xl flex items-center justify-center overflow-hidden p-2">
 
-            <div className="absolute inset-1.5 rounded-full border border-persona-cyan/30 pointer-events-none" />
-            <div className="absolute inset-3 rounded-full border border-dashed border-persona-cyan/20 pointer-events-none" />
-
-            <div className="text-persona-cyan font-mono text-[9px] sm:text-[10px] tracking-widest uppercase flex items-center gap-1 font-bold z-10">
-              <Compass className="w-3 h-3" /> EXPLORATION
-            </div>
-
-            <div className="text-4xl sm:text-5xl font-black italic text-white drop-shadow-[0_0_12px_rgba(0,229,255,0.8)] my-0.5 z-10">
-              {exploration.rank}
-            </div>
-
-            <span className="text-[9px] font-mono text-persona-white/70 z-10">{exploration.raw} pts</span>
-
-            <div className="absolute -bottom-1 bg-persona-dark border-2 border-persona-cyan px-2.5 py-0.5 -skew-x-12 shadow-[0_0_10px_rgba(0,229,255,0.5)] z-30 group-hover:bg-persona-cyan transition-colors">
-              <span className="text-[10px] font-mono text-persona-cyan group-hover:text-persona-dark uppercase font-black skew-x-12 block truncate max-w-[110px]">
-                {exploration.title}
-              </span>
-            </div>
-          </div>
-
-          {/* CÍRCULO 3: CRITICISM (Baixo Direita) */}
-          <div className="absolute bottom-2 right-1 sm:right-3 w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-indigo-600/20 border-2 border-persona-cyan/80 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center shadow-[0_0_25px_rgba(100,100,255,0.35)] z-10 transition-all duration-300 hover:scale-105 group cursor-pointer">
-            {/* Overlay Explicativo em Hover */}
-            <div className="absolute inset-0 bg-persona-dark/95 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-4 text-center z-40 border-2 border-persona-cyan">
-              <Info className="w-4 h-4 text-persona-cyan mb-1" />
-              <p className="text-[10px] font-mono text-persona-cyan font-bold uppercase mb-0.5">CRITICISM</p>
-              <p className="text-[9px] font-mono text-persona-white/90 leading-tight">
-                Mede o teu rigor e constância analítica com base no número total de análises submetidas.
-              </p>
-            </div>
-
-            <div className="absolute inset-1.5 rounded-full border border-persona-cyan/30 pointer-events-none" />
-            <div className="absolute inset-3 rounded-full border border-dashed border-persona-cyan/20 pointer-events-none" />
-
-            <div className="text-persona-cyan font-mono text-[9px] sm:text-[10px] tracking-widest uppercase flex items-center gap-1 font-bold z-10">
-              <Flame className="w-3 h-3" /> CRITICISM
-            </div>
-
-            <div className="text-4xl sm:text-5xl font-black italic text-white drop-shadow-[0_0_12px_rgba(0,229,255,0.8)] my-0.5 z-10">
-              {criticism.rank}
-            </div>
-
-            <span className="text-[9px] font-mono text-persona-white/70 z-10">{criticism.raw} reviews</span>
-
-            <div className="absolute -bottom-1 bg-persona-dark border-2 border-persona-cyan px-2.5 py-0.5 -skew-x-12 shadow-[0_0_10px_rgba(0,229,255,0.5)] z-30 group-hover:bg-persona-cyan transition-colors">
-              <span className="text-[10px] font-mono text-persona-cyan group-hover:text-persona-dark uppercase font-black skew-x-12 block truncate max-w-[110px]">
-                {criticism.title}
-              </span>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Barras de Progresso Inferiores */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-          {[
-            { label: "CRITICISM", data: criticism, icon: Flame },
-            { label: "INFLUENCE", data: influence, icon: Zap },
-            { label: "EXPLORATION", data: exploration, icon: Compass },
-          ].map((item, idx) => {
-            const Icon = item.icon;
-            return (
-              <div key={idx} className="bg-persona-dark/90 border border-persona-cyan/40 p-3 -skew-x-6 hover:border-persona-cyan transition-colors">
-                <div className="skew-x-6 flex justify-between items-center text-xs font-mono mb-1.5">
-                  <span className="text-persona-cyan font-black uppercase flex items-center gap-1">
-                    <Icon className="w-3 h-3" /> {item.label}
-                  </span>
-                  <span className="text-persona-white font-mono text-[11px] font-bold">
-                    {item.data.progress.toFixed(0)}%
-                  </span>
-                </div>
-                <div className="skew-x-6 w-full bg-persona-blue/40 h-2 border border-persona-cyan/30 overflow-hidden p-0.5">
-                  <div
-                    className="bg-gradient-to-r from-persona-blue via-persona-cyan to-white h-full transition-all duration-500"
-                    style={{ width: `${item.data.progress}%` }}
-                  />
-                </div>
+            {/* CÍRCULO 1: INFLUENCE (Topo) */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-cyan-500/20 border-2 border-persona-cyan/80 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center shadow-[0_0_25px_rgba(0,229,255,0.35)] z-20 transition-all duration-300 hover:scale-105 group cursor-pointer">
+              <div className="absolute inset-0 bg-persona-dark/95 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-4 text-center z-40 border-2 border-persona-cyan">
+                <Info className="w-4 h-4 text-persona-cyan mb-1" />
+                <p className="text-[10px] font-mono text-persona-cyan font-bold uppercase mb-0.5">INFLUENCE</p>
+                <p className="text-[9px] font-mono text-persona-white/90 leading-tight">
+                  Mede a tua relevância e popularidade na comunidade através dos likes acumulados nas tuas críticas.
+                </p>
               </div>
-            );
-          })}
-        </div>
 
+              <div className="absolute inset-1.5 rounded-full border border-persona-cyan/30 pointer-events-none" />
+              <div className="absolute inset-3 rounded-full border border-dashed border-persona-cyan/20 pointer-events-none" />
+
+              <div className="text-persona-cyan font-mono text-[9px] sm:text-[10px] tracking-widest uppercase flex items-center gap-1 font-bold z-10">
+                <Zap className="w-3 h-3" /> INFLUENCE
+              </div>
+
+              <div className="text-4xl sm:text-5xl font-black italic text-white drop-shadow-[0_0_12px_rgba(0,229,255,0.8)] my-0.5 z-10">
+                {influence.rank}
+              </div>
+
+              <span className="text-[9px] font-mono text-persona-white/70 z-10">{influence.raw} likes</span>
+
+              <div className="absolute -bottom-1 bg-persona-dark border-2 border-persona-cyan px-2.5 py-0.5 -skew-x-12 shadow-[0_0_10px_rgba(0,229,255,0.5)] z-30 group-hover:bg-persona-cyan transition-colors">
+                <span className="text-[10px] font-mono text-persona-cyan group-hover:text-persona-dark uppercase font-black skew-x-12 block truncate max-w-[120px]">
+                  {influence.title}
+                </span>
+              </div>
+            </div>
+
+            {/* CÍRCULO 2: EXPLORATION (Baixo Esquerda) */}
+            <div className="absolute bottom-2 left-1 sm:left-3 w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-blue-600/20 border-2 border-persona-cyan/80 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center shadow-[0_0_25px_rgba(0,150,255,0.35)] z-10 transition-all duration-300 hover:scale-105 group cursor-pointer">
+              <div className="absolute inset-0 bg-persona-dark/95 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-4 text-center z-40 border-2 border-persona-cyan">
+                <Info className="w-4 h-4 text-persona-cyan mb-1" />
+                <p className="text-[10px] font-mono text-persona-cyan font-bold uppercase mb-0.5">EXPLORATION</p>
+                <p className="text-[9px] font-mono text-persona-white/90 leading-tight">
+                  Mede a tua biblioteca musical com base nos álbuns no Compendium e variedade de artistas explorados.
+                </p>
+              </div>
+
+              <div className="absolute inset-1.5 rounded-full border border-persona-cyan/30 pointer-events-none" />
+              <div className="absolute inset-3 rounded-full border border-dashed border-persona-cyan/20 pointer-events-none" />
+
+              <div className="text-persona-cyan font-mono text-[9px] sm:text-[10px] tracking-widest uppercase flex items-center gap-1 font-bold z-10">
+                <Compass className="w-3 h-3" /> EXPLORATION
+              </div>
+
+              <div className="text-4xl sm:text-5xl font-black italic text-white drop-shadow-[0_0_12px_rgba(0,229,255,0.8)] my-0.5 z-10">
+                {exploration.rank}
+              </div>
+
+              <span className="text-[9px] font-mono text-persona-white/70 z-10">{exploration.raw} pts</span>
+
+              <div className="absolute -bottom-1 bg-persona-dark border-2 border-persona-cyan px-2.5 py-0.5 -skew-x-12 shadow-[0_0_10px_rgba(0,229,255,0.5)] z-30 group-hover:bg-persona-cyan transition-colors">
+                <span className="text-[10px] font-mono text-persona-cyan group-hover:text-persona-dark uppercase font-black skew-x-12 block truncate max-w-[110px]">
+                  {exploration.title}
+                </span>
+              </div>
+            </div>
+
+            {/* CÍRCULO 3: CRITICISM (Baixo Direita) */}
+            <div className="absolute bottom-2 right-1 sm:right-3 w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-indigo-600/20 border-2 border-persona-cyan/80 backdrop-blur-sm flex flex-col items-center justify-center p-3 text-center shadow-[0_0_25px_rgba(100,100,255,0.35)] z-10 transition-all duration-300 hover:scale-105 group cursor-pointer">
+              <div className="absolute inset-0 bg-persona-dark/95 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col items-center justify-center p-4 text-center z-40 border-2 border-persona-cyan">
+                <Info className="w-4 h-4 text-persona-cyan mb-1" />
+                <p className="text-[10px] font-mono text-persona-cyan font-bold uppercase mb-0.5">CRITICISM</p>
+                <p className="text-[9px] font-mono text-persona-white/90 leading-tight">
+                  Mede o teu rigor e constância analítica com base no número total de análises submetidas.
+                </p>
+              </div>
+
+              <div className="absolute inset-1.5 rounded-full border border-persona-cyan/30 pointer-events-none" />
+              <div className="absolute inset-3 rounded-full border border-dashed border-persona-cyan/20 pointer-events-none" />
+
+              <div className="text-persona-cyan font-mono text-[9px] sm:text-[10px] tracking-widest uppercase flex items-center gap-1 font-bold z-10">
+                <Flame className="w-3 h-3" /> CRITICISM
+              </div>
+
+              <div className="text-4xl sm:text-5xl font-black italic text-white drop-shadow-[0_0_12px_rgba(0,229,255,0.8)] my-0.5 z-10">
+                {criticism.rank}
+              </div>
+
+              <span className="text-[9px] font-mono text-persona-white/70 z-10">{criticism.raw} reviews</span>
+
+              <div className="absolute -bottom-1 bg-persona-dark border-2 border-persona-cyan px-2.5 py-0.5 -skew-x-12 shadow-[0_0_10px_rgba(0,229,255,0.5)] z-30 group-hover:bg-persona-cyan transition-colors">
+                <span className="text-[10px] font-mono text-persona-cyan group-hover:text-persona-dark uppercase font-black skew-x-12 block truncate max-w-[110px]">
+                  {criticism.title}
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Barras de Progresso Inferiores */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            {[
+              { label: "CRITICISM", data: criticism, icon: Flame },
+              { label: "INFLUENCE", data: influence, icon: Zap },
+              { label: "EXPLORATION", data: exploration, icon: Compass },
+            ].map((item, idx) => {
+              const Icon = item.icon;
+              return (
+                <div key={idx} className="bg-persona-dark/90 border border-persona-cyan/40 p-3 -skew-x-6 hover:border-persona-cyan transition-colors">
+                  <div className="skew-x-6 flex justify-between items-center text-xs font-mono mb-1.5">
+                    <span className="text-persona-cyan font-black uppercase flex items-center gap-1">
+                      <Icon className="w-3 h-3" /> {item.label}
+                    </span>
+                    <span className="text-persona-white font-mono text-[11px] font-bold">
+                      {item.data.progress.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="skew-x-6 w-full bg-persona-blue/40 h-2 border border-persona-cyan/30 overflow-hidden p-0.5">
+                    <div
+                      className="bg-gradient-to-r from-persona-blue via-persona-cyan to-white h-full transition-all duration-500"
+                      style={{ width: `${item.data.progress}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+      </div>
+
+      {/* NOVO PAINEL: SOCIAL LINKS // BONDS */}
+      <div className="bg-persona-dark/95 border-2 border-persona-cyan p-5 sm:p-6 shadow-[0_0_35px_rgba(0,229,255,0.25)] relative overflow-hidden">
+        <div className="skew-x-3 space-y-4">
+          <div className="flex justify-between items-center border-b-2 border-persona-cyan/40 pb-3">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-persona-cyan" />
+              <h2 className="text-xl font-black italic uppercase tracking-wider text-persona-white">
+                SOCIAL LINKS <span className="text-persona-cyan">// BONDS</span>
+              </h2>
+            </div>
+            <span className="text-[11px] font-mono text-persona-cyan/70 uppercase tracking-widest">
+              RANK SYSTEM ({socialLinks.length})
+            </span>
+          </div>
+
+          {socialLinks.length === 0 ? (
+            <div className="bg-persona-dark/60 border border-persona-cyan/30 p-6 text-center">
+              <p className="font-mono text-xs text-persona-cyan/60 uppercase">
+                NENHUM SOCIAL LINK ESTABELECIDO ATÉ AO MOMENTO.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {socialLinks.map((link) => (
+                <Link
+                  key={link.id}
+                  href={`/profile/${link.id}`}
+                  onMouseEnter={() => sfx.playHover()}
+                  onClick={() => sfx.playClick()}
+                  className="bg-persona-blue/30 border border-persona-cyan/40 hover:border-persona-cyan p-3 transition-all group flex items-center justify-between gap-3 -skew-x-6 cursor-pointer hover:bg-persona-blue/50"
+                >
+                  <div className="skew-x-6 flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 border border-persona-cyan bg-persona-blue overflow-hidden shrink-0 flex items-center justify-center">
+                      {link.image ? (
+                        <img src={link.image} alt={link.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-5 h-5 text-persona-cyan" />
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <span className="text-[9px] font-mono text-persona-cyan/70 uppercase block truncate">
+                        {link.arcana || "OPERATIVE"}
+                      </span>
+                      <h3 className="font-black italic text-xs text-white uppercase truncate group-hover:text-persona-cyan transition-colors">
+                        {link.name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Nível / Rank do Social Link */}
+                  <div className="skew-x-6 flex flex-col items-end shrink-0">
+                    <span className="text-[8px] font-mono text-persona-cyan/60 uppercase">RANK</span>
+                    <div className="flex items-center gap-1 bg-persona-cyan text-persona-dark px-2 py-0.5 font-black italic text-xs -skew-x-12 shadow-[0_0_8px_rgba(0,229,255,0.4)]">
+                      <Star className="w-3 h-3 fill-persona-dark skew-x-12" />
+                      <span className="skew-x-12">{link.rank >= 10 ? "MAX" : `LV. ${link.rank}`}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

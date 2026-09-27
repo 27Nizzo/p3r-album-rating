@@ -753,6 +753,24 @@ export default function Home() {
                     </div>
                   </button>
                 )}
+
+                {/* Botão para abrir no Spotify */}
+                {selectedAlbum.id !== "default" && (
+                  <a
+                    href={`https://open.spotify.com/album/${selectedAlbum.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onMouseEnter={() => sfx.playHover()}
+                    onClick={() => sfx.playClick()}
+                    className="inline-flex items-center gap-1.5 px-2 md:px-3 py-1  border font-mono text-[9px] md:text-xs font-bold uppercase transition-all bg-[#1DB954]/20 border-[#1DB954] text-[#1DB954] hover:bg-[#1DB954] hover:text-black shadow-[0_0_10px_rgba(29,185,84,0.3)] cursor-pointer"
+                    title="Ouvir Álbum Completo no Spotify"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Music className="w-3.5 h-3.5" />
+                      <span>OPEN IN SPOTIFY ↗</span>
+                    </div>
+                  </a>
+                )}
               </div>
 
               <div className="relative aspect-square w-[75%] md:w-full mx-auto bg-gradient-to-br from-persona-blue to-persona-dark border-2 border-persona-cyan mb-4 overflow-hidden flex items-center justify-center group">
