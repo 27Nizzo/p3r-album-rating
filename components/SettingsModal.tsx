@@ -49,9 +49,9 @@ export default function SettingsModal() {
         <Settings className="w-4 h-4 skew-x-12 transition-transform duration-300 hover:rotate-90" />
       </button>
 
-      {/* Menu Dropdown / Popover Corrigido (z-[100] e posicionamento no topo do ecrã em mobile) */}
+      {/* Menu Dropdown / Popover Corrigido */}
       {isOpen && (
-        <div className="fixed sm:absolute top-16 sm:top-full right-4 sm:right-0 mt-2 w-[calc(100vw-32px)] sm:w-80 bg-persona-dark/95 backdrop-blur-md border-2 border-persona-cyan shadow-[0_10px_40px_rgba(0,0,0,0.95)] z-[100] p-4 space-y-4">
+        <div className="fixed sm:absolute top-16 sm:top-full right-4 sm:right-0 mt-2 w-[calc(100vw-32px)] sm:w-96 bg-persona-dark/95 backdrop-blur-md border-2 border-persona-cyan shadow-[0_10px_40px_rgba(0,0,0,0.95)] z-[100] p-4 space-y-4">
           <div className="flex justify-between items-center border-b border-persona-cyan/30 pb-2">
             <div className="inline-flex items-center gap-1.5 bg-persona-cyan text-persona-dark px-2 py-0.5 font-black italic text-[10px] -skew-x-12 uppercase">
               <Sparkles className="w-3 h-3 skew-x-12" /> CONFIGURAÇÕES
@@ -59,18 +59,18 @@ export default function SettingsModal() {
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-persona-cyan hover:text-white transition-colors cursor-pointer p-1"
+              className="text-persona-cyan hover:opacity-70 transition-opacity cursor-pointer p-1"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Opção 1: Esquema de Cores */}
+          {/* Opção: Seleção de Esquema de Cores */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-xs font-mono text-persona-cyan/80 uppercase font-bold">
               <Palette className="w-4 h-4" /> ESQUEMA DE CORES
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {/* Tema Blue */}
               <button
                 type="button"
@@ -121,12 +121,46 @@ export default function SettingsModal() {
                 </div>
                 <span className="skew-x-12">CRIMSON</span>
               </button>
+
+              {/* Tema Yellow (Persona 4) */}
+              <button
+                type="button"
+                onClick={() => handleThemeChange('yellow')}
+                onMouseEnter={() => sfx.playHover()}
+                className={`p-2 border text-[10px] font-black italic uppercase -skew-x-12 flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                  theme === 'yellow'
+                    ? 'border-[#ffe600] bg-[#ffe600]/20 text-[#ffe600] shadow-[0_0_10px_rgba(255,230,0,0.4)]'
+                    : 'border-persona-cyan/30 text-persona-white/60 hover:border-[#ffe600]'
+                }`}
+              >
+                <div className="w-4 h-4 rounded-full bg-[#ffe600] border border-white skew-x-12 flex items-center justify-center">
+                  {theme === 'yellow' && <Check className="w-3 h-3 text-black" />}
+                </div>
+                <span className="skew-x-12">P4 GOLDEN</span>
+              </button>
+
+              {/* Tema White (Light Mode) */}
+              <button
+                type="button"
+                onClick={() => handleThemeChange('white')}
+                onMouseEnter={() => sfx.playHover()}
+                className={`p-2 border text-[10px] font-black italic uppercase -skew-x-12 flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                  theme === 'white'
+                    ? 'border-[#0055ff] bg-[#0055ff]/20 text-[#0055ff] shadow-[0_0_10px_rgba(0,85,255,0.4)]'
+                    : 'border-persona-cyan/30 text-persona-white/60 hover:border-[#0055ff]'
+                }`}
+              >
+                <div className="w-4 h-4 rounded-full bg-[#f0f4f8] border border-[#0055ff] skew-x-12 flex items-center justify-center">
+                  {theme === 'white' && <Check className="w-3 h-3 text-[#0055ff]" />}
+                </div>
+                <span className="skew-x-12">VELVET WHITE</span>
+              </button>
             </div>
           </div>
 
           <hr className="border-persona-cyan/20" />
 
-          {/* Opção 2: Terminar Sessão */}
+          {/* Opção: Terminar Sessão */}
           <button
             type="button"
             onClick={handleLogout}

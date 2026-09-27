@@ -73,3 +73,20 @@ body {
   --color-persona-cyan: #ff003c;
   --color-persona-white: #ffffff;
 }
+
+/* TEMA YELLOW (Persona 4 Golden Style) */
+[data-theme="yellow"] {
+  --color-persona-white: #ffffff;
+  --color-persona-dark: #121000;         /* Fundo escuro com um leve toque quente/castanho */
+  --color-persona-blue: #2a2400;         /* Tom secundário escuro para cards/painéis */
+  --color-persona-cyan: #ffe600;         /* Amarelo vibrante P4 (Substitui o Cyan principal) */
+  --color-persona-cyan-glow: #fff066;    /* Amarelo para efeitos de brilho e destaque */
+}
+
+[data-theme="white"] {
+  --color-persona-white: #121824;      /* Texto principal em azul escuro quase preto */
+  --color-persona-dark: #f0f4f8;       /* Fundo principal em branco/cinza-gelo claro */
+  --color-persona-blue: #dce5f0;       /* Fundo dos cards e contêineres secundários */
+  --color-persona-cyan: #0055ff;       /* Azul elétrico vibrante para destaques e bordas */
+  --color-persona-cyan-glow: #3377ff;  /* Brilho para efeitos de seleção */
+}
