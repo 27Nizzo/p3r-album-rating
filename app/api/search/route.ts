@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
     // 2. Pesquisa de Álbuns na tua API do Spotify existente
     // (Ajusta o URL interno para corresponder à tua rota da Spotify Search)
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const baseUrl = "https://velvet-records-tan.vercel.app/";
     const spotifyRes = await fetch(
       `${baseUrl}/api/spotify/search?q=${encodeURIComponent(q)}`
     );
