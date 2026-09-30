@@ -29,6 +29,7 @@ import SettingsModal from "@/components/SettingsModal";
 
 interface Review {
   id: string;
+  albumId?: string;
   albumTitle: string;
   artistName: string;
   coverUrl: string;
@@ -660,63 +661,83 @@ export default function ProfilePage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 w-full">
-                {favorites.map((fav) => (
-                  <div
-                    key={fav.id}
-                    onMouseEnter={() => sfx.playHover()}
-                    className="bg-persona-dark/90 border border-persona-cyan/40 p-2 md:p-3 flex flex-col justify-between group hover:border-persona-cyan transition-all w-full overflow-hidden"
-                  >
-                    <div className="w-full">
-                      <div className="relative w-full aspect-square bg-persona-blue/40 border border-persona-cyan/50 mb-2 overflow-hidden flex items-center justify-center shrink-0">
-                        {fav.coverUrl ? (
-                          <img
-                            src={fav.coverUrl}
-                            alt={fav.albumTitle}
-                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
+                {favorites.map((fav) => {
+                  const hasReviewed = userReviews.some(
+                    (rev) => rev.albumId === fav.albumId,
+                  );
+
+                  return (
+                    <div
+                      key={fav.id}
+                      onMouseEnter={() => sfx.playHover()}
+                      className="bg-persona-dark/90 border border-persona-cyan/40 p-2 md:p-3 flex flex-col justify-between group hover:border-persona-cyan transition-all w-full overflow-hidden"
+                    >
+                      <div className="w-full">
+                        <div className="relative w-full aspect-square bg-persona-blue/40 border border-persona-cyan/50 mb-2 overflow-hidden flex items-center justify-center shrink-0">
+                          {fav.coverUrl ? (
+                            <img
+                              src={fav.coverUrl}
+                              alt={fav.albumTitle}
+                              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                          ) : (
+                            <Disc className="w-8 h-8 md:w-10 md:h-10 text-persona-cyan/40" />
+                          )}
+                        </div>
+                        <div className="min-w-0 w-full">
+                          <h3 className="font-black italic text-[11px] md:text-sm text-persona-cyan uppercase truncate">
+                            {fav.albumTitle}
+                          </h3>
+                          <p className="text-[9px] md:text-xs font-mono text-persona-white/60 uppercase truncate">
+                            {fav.artistName} ({fav.releaseYear})
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center mt-2 pt-2 border-t border-persona-cyan/20 gap-2">
+                        {/* BOTÃO QoL: REVIEW / SPOTLIGHT */}
+                        <Link
+                          href={`/?albumId=${fav.albumId}&albumTitle=${encodeURIComponent(fav.albumTitle)}&artistName=${encodeURIComponent(fav.artistName)}&coverUrl=${encodeURIComponent(fav.coverUrl)}&releaseYear=${encodeURIComponent(fav.releaseYear)}`}
+                          onMouseEnter={() => sfx.playHover()}
+                          onClick={() => sfx.playClick()}
+                          className={`px-2 py-1 -skew-x-12 font-mono text-[9px] font-bold uppercase transition-all flex items-center gap-1 border cursor-pointer truncate ${
+                            hasReviewed
+                              ? "bg-persona-cyan text-persona-dark border-persona-cyan shadow-[0_0_10px_rgba(0,229,255,0.6)]"
+                              : "bg-persona-cyan/20 border-persona-cyan/60 hover:bg-persona-cyan hover:text-persona-dark text-persona-cyan"
+                          }`}
+                          title={
+                            hasReviewed
+                              ? "Álbum já avaliado. Ver/Editar no Spotlight"
+                              : "Avaliar este álbum no Spotlight"
+                          }
+                        >
+                          <Flame
+                            className={`w-3 h-3 skew-x-12 shrink-0 ${
+                              hasReviewed ? "fill-persona-dark" : ""
+                            }`}
                           />
-                        ) : (
-                          <Disc className="w-8 h-8 md:w-10 md:h-10 text-persona-cyan/40" />
-                        )}
-                      </div>
-                      <div className="min-w-0 w-full">
-                        <h3 className="font-black italic text-[11px] md:text-sm text-persona-cyan uppercase truncate">
-                          {fav.albumTitle}
-                        </h3>
-                        <p className="text-[9px] md:text-xs font-mono text-persona-white/60 uppercase truncate">
-                          {fav.artistName} ({fav.releaseYear})
-                        </p>
+                          <span className="skew-x-12 truncate">
+                            {hasReviewed ? "REVIEWED ✓" : "REVIEW"}
+                          </span>
+                        </Link>
+
+                        {/* Botão para Remover do Compendium */}
+                        <button
+                          onClick={() => handleRemoveFavorite(fav.albumId)}
+                          disabled={deletingFavAlbumId === fav.albumId}
+                          className="text-red-400 hover:text-red-300 p-1 border border-red-500/30 hover:border-red-500 bg-red-500/10 cursor-pointer disabled:opacity-40 shrink-0"
+                          title="Remover do Compendium"
+                        >
+                          {deletingFavAlbumId === fav.albumId ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-3 h-3" />
+                          )}
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-persona-cyan/20 gap-2">
-                      {/* BOTÃO QoL: REVIEW / SPOTLIGHT */}
-                      <Link
-                        href={`/?albumId=${fav.albumId}&albumTitle=${encodeURIComponent(fav.albumTitle)}&artistName=${encodeURIComponent(fav.artistName)}&coverUrl=${encodeURIComponent(fav.coverUrl)}&releaseYear=${encodeURIComponent(fav.releaseYear)}`}
-                        onMouseEnter={() => sfx.playHover()}
-                        onClick={() => sfx.playClick()}
-                        className="bg-persona-cyan/20 border border-persona-cyan/60 hover:bg-persona-cyan hover:text-persona-dark text-persona-cyan px-2 py-1 -skew-x-12 font-mono text-[9px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer truncate"
-                        title="Avaliar este álbum no Spotlight"
-                      >
-                        <Flame className="w-3 h-3 skew-x-12 shrink-0" />
-                        <span className="skew-x-12 truncate">REVIEW</span>
-                      </Link>
-
-                      {/* Botão para Remover do Compendium */}
-                      <button
-                        onClick={() => handleRemoveFavorite(fav.albumId)}
-                        disabled={deletingFavAlbumId === fav.albumId}
-                        className="text-red-400 hover:text-red-300 p-1 border border-red-500/30 hover:border-red-500 bg-red-500/10 cursor-pointer disabled:opacity-40 shrink-0"
-                        title="Remover do Compendium"
-                      >
-                        {deletingFavAlbumId === fav.albumId ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-3 h-3" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
